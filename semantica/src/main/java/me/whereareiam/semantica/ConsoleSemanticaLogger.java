@@ -1,6 +1,4 @@
-package me.whereareiam.semantica.bootstrap;
-
-import me.whereareiam.semantica.SemanticaLogger;
+package me.whereareiam.semantica;
 
 public class ConsoleSemanticaLogger implements SemanticaLogger {
 	@Override

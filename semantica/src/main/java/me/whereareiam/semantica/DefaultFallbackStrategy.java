@@ -1,6 +1,5 @@
-package me.whereareiam.semantica.bootstrap;
+package me.whereareiam.semantica;
 
-import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.service.FallbackStrategy;
 
 public class DefaultFallbackStrategy implements FallbackStrategy {

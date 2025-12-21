@@ -2,7 +2,6 @@ package me.whereareiam.semantica.common;
 
 import me.whereareiam.semantica.common.cache.CacheLevel;
 import me.whereareiam.semantica.common.cache.CacheStrategy;
-import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.TagConfiguration;
 import org.junit.jupiter.api.Test;
 

@@ -2,7 +2,6 @@ package me.whereareiam.semantica.common;
 
 import lombok.Getter;
 import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
 
 import java.util.*;
@@ -10,19 +9,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Builds dependency graph between messages/templates.
+ * Builds dependency graph between translation references.
  */
 public class DependencyGraph {
-	private final Pattern messageRefPattern;
-	private final Pattern templatePattern;
+	private final Pattern referencePattern;
 
 	private final Map<String, Set<String>> dependencies = new HashMap<>();
 	@Getter
 	private List<String> resolutionOrder = List.of();
 
 	public DependencyGraph(TagTokens tags) {
-		this.messageRefPattern = Pattern.compile("<" + Pattern.quote(tags.messageRefTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)>");
-		this.templatePattern = Pattern.compile("<" + Pattern.quote(tags.templateTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)");
+		this.referencePattern = Pattern.compile("<" + Pattern.quote(tags.referenceTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)");
 	}
 
 	public void build(Map<String, TranslationEntry> entries) {
@@ -46,11 +43,8 @@ public class DependencyGraph {
 	private Set<String> extract(String text) {
 		Set<String> deps = new HashSet<>();
 
-		Matcher m = messageRefPattern.matcher(text);
+		Matcher m = referencePattern.matcher(text);
 		while (m.find()) deps.add(m.group(1));
-
-		Matcher t = templatePattern.matcher(text);
-		while (t.find()) deps.add(t.group(1));
 
 		return deps;
 	}

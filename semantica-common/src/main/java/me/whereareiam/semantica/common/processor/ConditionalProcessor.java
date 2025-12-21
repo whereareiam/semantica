@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.common.processor;
 
-import me.whereareiam.semantica.common.util.TagTokens;
+import me.whereareiam.semantica.common.TagTokens;
 import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.service.TranslationProcessor;
 

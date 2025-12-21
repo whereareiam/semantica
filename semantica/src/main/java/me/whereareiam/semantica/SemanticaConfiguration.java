@@ -1,10 +1,8 @@
-package me.whereareiam.semantica.bootstrap;
+package me.whereareiam.semantica;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
-import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.SemanticaLogger;
 import me.whereareiam.semantica.model.SemanticLocale;
 import me.whereareiam.semantica.model.TagConfiguration;
 import me.whereareiam.semantica.service.FallbackStrategy;

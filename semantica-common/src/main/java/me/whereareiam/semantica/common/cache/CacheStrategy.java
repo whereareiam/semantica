@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.common.cache;
 
-import me.whereareiam.semantica.common.util.TagTokens;
+import me.whereareiam.semantica.common.TagTokens;
 
 /**
  * Determines which cache level to use based on text content.

@@ -1,45 +1,60 @@
 package me.whereareiam.semantica.common.processor;
 
+import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
-import me.whereareiam.semantica.common.util.TagTokens;
+import me.whereareiam.semantica.common.TagTokens;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
 import me.whereareiam.semantica.service.FallbackResolver;
-import me.whereareiam.semantica.service.TranslationRegistry;
 import me.whereareiam.semantica.service.TranslationProcessor;
-import me.whereareiam.semantica.TranslationLocale;
+import me.whereareiam.semantica.service.TranslationRegistry;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Expands templates <tpl:key param='value'>.
+ * Resolves references <ref:key> or <ref:key param='value'>.
+ * Combines functionality of message references and templates.
  */
-public class TemplateProcessor implements TranslationProcessor {
+public class ReferenceProcessor implements TranslationProcessor {
+	private static final int MAX_DEPTH = 10;
 	private final TranslationRegistry registry;
 	private final TagTokens tags;
-	private final Pattern templatePattern;
+	private final Pattern referencePattern;
 	private final Pattern paramPattern = Pattern.compile("([a-zA-Z0-9_\\-]+)='([^']*)'");
+
 	private final FallbackResolver fallbackResolver = new DefaultFallbackResolver();
 
-	public TemplateProcessor(TranslationRegistry registry, TagTokens tags) {
+	public ReferenceProcessor(TranslationRegistry registry, TagTokens tags) {
 		this.registry = registry;
 		this.tags = tags;
-		this.templatePattern = Pattern.compile("<" + Pattern.quote(tags.templateTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)(?:\\s+((?:[^>']|'[^']*')*))?>", Pattern.DOTALL);
+		this.referencePattern = Pattern.compile("<" + Pattern.quote(tags.referenceTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)(?:\\s+((?:[^>']|'[^']*')*))?>", Pattern.DOTALL);
 	}
 
 	@Override
 	public String process(String text, TranslationLocale locale, Map<String, Object> placeholders) {
 		if (text == null || text.isEmpty()) return text;
-		if (!text.contains(tags.templateTag)) return text;
+		if (!text.contains(tags.referenceTag)) return text;
+		return resolve(text, locale, new HashSet<>(), 0);
+	}
 
-		Matcher matcher = templatePattern.matcher(text);
+	private String resolve(String text, TranslationLocale locale, Set<String> path, int depth) {
+		if (depth >= MAX_DEPTH) return text;
+
+		Matcher matcher = referencePattern.matcher(text);
 		StringBuilder result = new StringBuilder();
 
 		while (matcher.find()) {
 			String key = matcher.group(1);
 			String paramsString = matcher.group(2);
+
+			if (path.contains(key)) {
+				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
+				continue;
+			}
 
 			TranslationEntry entry = registry.get(key);
 			if (entry == null) {
@@ -47,8 +62,8 @@ public class TemplateProcessor implements TranslationProcessor {
 				continue;
 			}
 
-			String templateText = entry.resolve(locale, fallbackResolver, null, key);
-			if (templateText == null || templateText.equals(key)) {
+			String entryText = entry.resolve(locale, fallbackResolver, null, key);
+			if (entryText == null || entryText.equals(key)) {
 				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
 				continue;
 			}
@@ -57,11 +72,14 @@ public class TemplateProcessor implements TranslationProcessor {
 				Map<String, String> params = parseParams(paramsString);
 				for (Map.Entry<String, String> param : params.entrySet()) {
 					String placeholder = "<" + tags.placeholderTag.substring(1) + param.getKey() + ">";
-					templateText = templateText.replace(placeholder, param.getValue());
+					entryText = entryText.replace(placeholder, param.getValue());
 				}
 			}
 
-			matcher.appendReplacement(result, Matcher.quoteReplacement(templateText));
+			Set<String> newPath = new HashSet<>(path);
+			newPath.add(key);
+			String resolved = resolve(entryText, locale, newPath, depth + 1);
+			matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
 		}
 		matcher.appendTail(result);
 		return result.toString();
@@ -78,12 +96,11 @@ public class TemplateProcessor implements TranslationProcessor {
 
 	@Override
 	public int getPriority() {
-		return 100;
+		return 125;
 	}
 
 	@Override
 	public String getName() {
-		return "templates";
+		return "references";
 	}
 }
-

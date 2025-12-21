@@ -6,11 +6,10 @@ import lombok.Getter;
 /**
  * Configurable tag prefixes used by Semantica’s processors.
  * <p>
- * Defaults mirror Intercept:
+ * Defaults:
  * <ul>
- *   <li>Message references: {@code <m:key>}</li>
+ *   <li>References: {@code <ref:key>} or {@code <ref:key param='value'>}</li>
  *   <li>Placeholders: {@code <p:name>}</li>
- *   <li>Templates: {@code <tpl:key>}</li>
  *   <li>Conditionals: {@code <if ...>} / {@code <else>}</li>
  * </ul>
  */
@@ -18,11 +17,9 @@ import lombok.Getter;
 @Builder(toBuilder = true)
 public class TagConfiguration {
 	@Builder.Default
-	private final String messageRefPrefix = "m";
+	private final String referencePrefix = "ref";
 	@Builder.Default
 	private final String placeholderPrefix = "p";
-	@Builder.Default
-	private final String templatePrefix = "tpl";
 	@Builder.Default
 	private final String conditionalIf = "if";
 	@Builder.Default

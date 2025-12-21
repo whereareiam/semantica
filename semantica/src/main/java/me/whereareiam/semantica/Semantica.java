@@ -1,18 +1,15 @@
-package me.whereareiam.semantica.bootstrap;
+package me.whereareiam.semantica;
 
-import me.whereareiam.semantica.SemanticaLogger;
-import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.common.DependencyGraph;
 import me.whereareiam.semantica.common.cache.CacheStrategy;
 import me.whereareiam.semantica.common.cache.TranslationCache;
 import me.whereareiam.semantica.common.processor.ConditionalProcessor;
-import me.whereareiam.semantica.common.processor.MessageReferenceProcessor;
 import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
-import me.whereareiam.semantica.common.processor.TemplateProcessor;
+import me.whereareiam.semantica.common.processor.ReferenceProcessor;
 import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
 import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
 import me.whereareiam.semantica.common.service.DefaultTranslationService;
-import me.whereareiam.semantica.common.util.TagTokens;
+import me.whereareiam.semantica.common.TagTokens;
 import me.whereareiam.semantica.model.TagConfiguration;
 import me.whereareiam.semantica.model.TranslationSource;
 import me.whereareiam.semantica.model.translation.LocalizedEntry;
@@ -57,8 +54,7 @@ public final class Semantica {
 		DependencyGraph dependencyGraph = new DependencyGraph(tags);
 
 		List<TranslationProcessor> processors = new ArrayList<>();
-		processors.add(new TemplateProcessor(registry, tags));
-		processors.add(new MessageReferenceProcessor(registry, tags));
+		processors.add(new ReferenceProcessor(registry, tags));
 		processors.add(new ConditionalProcessor(tags));
 		processors.add(new PlaceholderProcessor(tags));
 		processors.addAll(config.getCustomProcessors());
