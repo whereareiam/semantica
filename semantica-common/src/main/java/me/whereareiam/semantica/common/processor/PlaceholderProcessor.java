@@ -14,7 +14,10 @@ public class PlaceholderProcessor implements TranslationProcessor {
 
 	public PlaceholderProcessor(TagTokens tags) {
 		this.tags = tags;
-		this.pattern = Pattern.compile("<" + Pattern.quote(tags.placeholderTag.substring(1)) + "([a-zA-Z0-9_\\-]+)>");
+		String quotedOpen = Pattern.quote(tags.openDelimiter);
+		String quotedClose = Pattern.quote(tags.closeDelimiter);
+		String quotedPrefix = Pattern.quote(tags.placeholderTag.substring(tags.openDelimiter.length()));
+		this.pattern = Pattern.compile(quotedOpen + quotedPrefix + "([a-zA-Z0-9_\\-]+)" + quotedClose);
 	}
 
 	@Override

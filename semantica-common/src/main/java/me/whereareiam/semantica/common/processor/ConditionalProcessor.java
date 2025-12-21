@@ -36,12 +36,12 @@ public class ConditionalProcessor implements TranslationProcessor {
 		int ifStart = text.indexOf(tags.conditionalIfTag);
 		if (ifStart == -1) return text;
 
-		int conditionEnd = text.indexOf('>', ifStart);
+		int conditionEnd = text.indexOf(tags.closeDelimiter, ifStart);
 		if (conditionEnd == -1) return text;
 
 		String condition = text.substring(ifStart + tags.conditionalIfTag.length(), conditionEnd).trim();
 
-		int contentStart = conditionEnd + 1;
+		int contentStart = conditionEnd + tags.closeDelimiter.length();
 		int elsePos = -1;
 		int depth = 1;
 		int pos = contentStart;

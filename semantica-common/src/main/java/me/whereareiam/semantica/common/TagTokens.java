@@ -11,13 +11,17 @@ public final class TagTokens {
 	public final String conditionalIfTag;
 	public final String conditionalElseTag;
 	public final String conditionalIfCloseTag;
+	public final String openDelimiter;
+	public final String closeDelimiter;
 
 	public TagTokens(TagConfiguration config) {
-		this.referenceTag = "<" + config.getReferencePrefix() + ":";
-		this.placeholderTag = "<" + config.getPlaceholderPrefix() + ":";
-		this.conditionalIfTag = "<" + config.getConditionalIf() + " ";
-		this.conditionalElseTag = "<" + config.getConditionalElse() + ">";
-		this.conditionalIfCloseTag = "</" + config.getConditionalIf() + ">";
+		this.openDelimiter = config.getOpenDelimiter();
+		this.closeDelimiter = config.getCloseDelimiter();
+		this.referenceTag = openDelimiter + config.getReferencePrefix() + ":";
+		this.placeholderTag = openDelimiter + config.getPlaceholderPrefix() + ":";
+		this.conditionalIfTag = openDelimiter + config.getConditionalIf() + " ";
+		this.conditionalElseTag = openDelimiter + config.getConditionalElse() + closeDelimiter;
+		this.conditionalIfCloseTag = openDelimiter + "/" + config.getConditionalIf() + closeDelimiter;
 	}
 }
 

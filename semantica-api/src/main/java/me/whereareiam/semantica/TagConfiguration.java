@@ -26,6 +26,20 @@ public class TagConfiguration {
 	private final String conditionalElse = "else";
 	
 	/**
+	 * Opening delimiter for tags.
+	 * Default: "&lt;"
+	 */
+	@Builder.Default
+	private final String openDelimiter = "<";
+	
+	/**
+	 * Closing delimiter for tags.
+	 * Default: "&gt;"
+	 */
+	@Builder.Default
+	private final String closeDelimiter = ">";
+	
+	/**
 	 * Maximum recursion depth for reference resolution.
 	 * Set to -1 to disable depth limit (uses early exit when text stops changing).
 	 * Default: 10

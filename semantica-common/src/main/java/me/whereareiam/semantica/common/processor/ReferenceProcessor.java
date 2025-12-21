@@ -33,7 +33,10 @@ public class ReferenceProcessor implements TranslationProcessor {
 		this.registry = registry;
 		this.tags = tags;
 		this.maxDepth = maxDepth;
-		this.referencePattern = Pattern.compile("<" + Pattern.quote(tags.referenceTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)(?:\\s+((?:[^>']|'[^']*')*))?>", Pattern.DOTALL);
+		String quotedOpen = Pattern.quote(tags.openDelimiter);
+		String quotedClose = Pattern.quote(tags.closeDelimiter);
+		String quotedPrefix = Pattern.quote(tags.referenceTag.substring(tags.openDelimiter.length()));
+		this.referencePattern = Pattern.compile(quotedOpen + quotedPrefix + "([a-zA-Z0-9_.\\-]+)(?:\\s+((?:[^" + Pattern.quote(tags.closeDelimiter.substring(0, 1)) + "']|'[^']*')*))?" + quotedClose, Pattern.DOTALL);
 	}
 
 	@Override
@@ -98,7 +101,7 @@ public class ReferenceProcessor implements TranslationProcessor {
 			if (paramsString != null && !paramsString.isBlank()) {
 				Map<String, String> params = parseParams(paramsString);
 				for (Map.Entry<String, String> param : params.entrySet()) {
-					String placeholder = "<" + tags.placeholderTag.substring(1) + param.getKey() + ">";
+					String placeholder = tags.openDelimiter + tags.placeholderTag.substring(tags.openDelimiter.length()) + param.getKey() + tags.closeDelimiter;
 					entryText = entryText.replace(placeholder, param.getValue());
 				}
 			}
