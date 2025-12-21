@@ -10,13 +10,13 @@ import me.whereareiam.semantica.common.processor.MessageReferenceProcessor;
 import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
 import me.whereareiam.semantica.common.processor.TemplateProcessor;
 import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
+import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
 import me.whereareiam.semantica.common.service.DefaultTranslationService;
 import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.TagConfiguration;
-import me.whereareiam.semantica.model.Translation;
-import me.whereareiam.semantica.model.translation.TranslationEntry;
+import me.whereareiam.semantica.model.TranslationSource;
+import me.whereareiam.semantica.model.translation.LocalizedEntry;
 import me.whereareiam.semantica.service.*;
-import me.whereareiam.semantica.type.MessageType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,18 +34,24 @@ public final class Semantica {
 	}
 
 	public static <L> TranslationService<L> createService(SemanticaConfiguration<L> config, TranslationRegistry registry) {
+		LocaleParser<L> localeParser = config.getLocaleParser();
+		if (localeParser == null) {
+			throw new IllegalArgumentException("LocaleParser is required. Please provide one via SemanticaConfiguration.builder().localeParser(...)");
+		}
+
 		TagConfiguration tagConfig = config.getTagConfiguration();
 		TagTokens tags = new TagTokens(tagConfig);
 
 		SemanticaLogger logger = config.getLogger();
 		FallbackStrategy fallback = config.getFallbackStrategy();
+		FallbackResolver fallbackResolver = new DefaultFallbackResolver();
 
 		CacheStrategy cacheStrategy = new CacheStrategy(tags);
 		TranslationCache cache = new TranslationCache(
-				config.getCache().getSemiStaticCacheSize(),
-				config.getCache().getDynamicCacheSize(),
-				config.getCache().getSemiStaticExpireMinutes(),
-				config.getCache().getDynamicExpireMinutes()
+				config.getPerformance().getCache().getSemiStaticSize(),
+				config.getPerformance().getCache().getDynamicSize(),
+				config.getPerformance().getCache().getSemiStaticExpireMinutes(),
+				config.getPerformance().getCache().getDynamicExpireMinutes()
 		);
 
 		DependencyGraph dependencyGraph = new DependencyGraph(tags);
@@ -57,12 +63,6 @@ public final class Semantica {
 		processors.add(new PlaceholderProcessor(tags));
 		processors.addAll(config.getCustomProcessors());
 
-		// Use provided converter or default identity converter
-		LocaleConverter<L> localeConverter = config.getLocaleConverter();
-		if (localeConverter == null) {
-			localeConverter = createIdentityConverter();
-		}
-
 		DefaultTranslationService<L> service = new DefaultTranslationService<>(
 				registry,
 				config.getDefaultLocale(),
@@ -70,61 +70,88 @@ public final class Semantica {
 				cacheStrategy,
 				processors,
 				fallback,
+				fallbackResolver,
 				dependencyGraph,
-				localeConverter
+				localeParser,
+				config.getPerformance().getCache().isEnabled()
 		);
 
 		if (registry instanceof DefaultTranslationRegistry dtr)
 			dtr.setOnClear(cache::clear);
 
 		// Load translations if provider is configured
-		if (config.getTranslationProvider() != null)
-			loadFromProvider(config.getTranslationProvider(), registry, localeConverter);
+		if (config.getTranslationProvider() != null) {
+			long loadStart = config.getPerformance().isLogTimings() ? System.currentTimeMillis() : 0;
+			
+			loadFromProvider(config.getTranslationProvider(), registry, localeParser);
+			
+			if (config.getPerformance().isLogTimings()) {
+				long loadDuration = System.currentTimeMillis() - loadStart;
+				logger.info("Loaded translations in " + loadDuration + " ms");
+			}
+		}
 
-		if (config.getCache().isPreRenderStatic())
-			service.preRenderStatic();
+		// Post-loading optimizations
+		boolean shouldBuildGraph = config.getPerformance().isBuildDependencyGraph();
+		boolean shouldPrerender = config.getPerformance().isPrerenderStatic() && config.getPerformance().getCache().isEnabled();
+
+		if (shouldBuildGraph || shouldPrerender) {
+			long startTime = config.getPerformance().isLogTimings() ? System.currentTimeMillis() : 0;
+
+			if (shouldBuildGraph) {
+				dependencyGraph.build(registry.getAllEntries());
+				
+				// Log circular dependencies
+				for (String key : registry.getKeys()) {
+					if (dependencyGraph.hasCircularDependency(key)) {
+						logger.warn("Circular dependency detected for key: " + key);
+					}
+				}
+			}
+
+			if (shouldPrerender) {
+				int preRendered = service.preRenderStatic();
+				if (config.getPerformance().isLogTimings()) {
+					logger.info("Pre-rendered " + preRendered + " static translations");
+				}
+			}
+
+			if (config.getPerformance().isLogTimings()) {
+				long duration = System.currentTimeMillis() - startTime;
+				logger.info("Finished compilation in " + duration + " ms");
+			}
+		}
 
 		return service;
-	}
-
-	private static <L> LocaleConverter<L> createIdentityConverter() {
-		return locale -> {
-			if (locale instanceof TranslationLocale tl)
-				return tl;
-
-			throw new IllegalArgumentException(
-					"Locale type " + locale.getClass().getName() + " is not a TranslationLocale. " +
-							"Provide a LocaleConverter in SemanticaConfiguration."
-			);
-		};
 	}
 
 	private static <L> void loadFromProvider(
 			TranslationProvider<L> provider,
 			TranslationRegistry registry,
-			LocaleConverter<L> localeConverter
+			LocaleParser<L> localeParser
 	) {
-		Map<L, Map<String, Translation>> allTranslations = provider.provideAll();
+		Map<L, Map<String, TranslationSource>> allTranslations = provider.provideAll();
 		
 		// Group translations by key
-		Map<String, Map<TranslationLocale, String>> grouped = new HashMap<>();
+		Map<String, Map<TranslationLocale, TranslationSource>> grouped = new HashMap<>();
 		
 		allTranslations.forEach((locale, translations) -> {
-			TranslationLocale translationLocale = localeConverter.convert(locale);
-			translations.forEach((key, translation) -> {
-				String text = translation.getText().asString();
+			TranslationLocale translationLocale = localeParser.parse(locale);
+			translations.forEach((key, source) -> {
 				grouped.computeIfAbsent(key, k -> new HashMap<>())
-						.put(translationLocale, text);
+						.put(translationLocale, source);
 			});
 		});
 		
 		// Register grouped entries
 		grouped.forEach((key, localeMap) -> {
-			TranslationEntry entry =
-					new TranslationEntry(
-							MessageType.MESSAGE,
-							localeMap
-					);
+			// Create text map
+			Map<TranslationLocale, String> textMap = new HashMap<>();
+			localeMap.forEach((locale, source) -> {
+				textMap.put(locale, source.getText().asString());
+			});
+			
+			LocalizedEntry entry = new LocalizedEntry(textMap);
 			registry.register(key, entry);
 		});
 	}

@@ -1,7 +1,9 @@
 package me.whereareiam.semantica.common.processor;
 
+import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
 import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
+import me.whereareiam.semantica.service.FallbackResolver;
 import me.whereareiam.semantica.service.TranslationRegistry;
 import me.whereareiam.semantica.service.TranslationProcessor;
 import me.whereareiam.semantica.TranslationLocale;
@@ -19,6 +21,7 @@ public class TemplateProcessor implements TranslationProcessor {
 	private final TagTokens tags;
 	private final Pattern templatePattern;
 	private final Pattern paramPattern = Pattern.compile("([a-zA-Z0-9_\\-]+)='([^']*)'");
+	private final FallbackResolver fallbackResolver = new DefaultFallbackResolver();
 
 	public TemplateProcessor(TranslationRegistry registry, TagTokens tags) {
 		this.registry = registry;
@@ -44,8 +47,8 @@ public class TemplateProcessor implements TranslationProcessor {
 				continue;
 			}
 
-			String templateText = entry.hasTranslations() ? entry.getText(locale) : entry.getSingleText();
-			if (templateText == null) {
+			String templateText = entry.resolve(locale, fallbackResolver, null, key);
+			if (templateText == null || templateText.equals(key)) {
 				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
 				continue;
 			}

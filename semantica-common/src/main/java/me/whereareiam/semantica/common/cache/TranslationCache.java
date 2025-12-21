@@ -45,6 +45,12 @@ public class TranslationCache {
 		dynamicCache.clear();
 	}
 
+	public void invalidate(String key) {
+		staticCache.keySet().removeIf(k -> k.getKey().equals(key));
+		semiStaticCache.keySet().removeIf(k -> k.getKey().equals(key));
+		dynamicCache.keySet().removeIf(k -> k.getKey().equals(key));
+	}
+
 	public void clearLevel(CacheLevel level) {
 		switch (level) {
 			case STATIC -> staticCache.clear();

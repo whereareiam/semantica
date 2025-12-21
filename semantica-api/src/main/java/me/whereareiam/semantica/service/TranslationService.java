@@ -1,6 +1,7 @@
 package me.whereareiam.semantica.service;
 
 import me.whereareiam.semantica.TranslationLocale;
+import me.whereareiam.semantica.model.translation.TranslationEntry;
 import me.whereareiam.semantica.model.translation.TranslationRequest;
 
 import java.util.Map;
@@ -14,7 +15,7 @@ import java.util.Set;
  *   <li>Resolve text by key/locale (with placeholders)</li>
  *   <li>Expose locale availability per key</li>
  *   <li>Provide cache control via {@link #reload()}</li>
- *   <li>Expose the registry for runtime modifications</li>
+ *   <li>Allow runtime modifications via controlled methods</li>
  * </ul>
  *
  * @param <L> the locale type used by this service
@@ -26,7 +27,7 @@ public interface TranslationService<L> {
 	 * @param request translation request
 	 * @return resolved text or fallback
 	 */
-	String resolve(TranslationRequest request);
+	String resolve(TranslationRequest<L> request);
 
 	/**
 	 * Resolve a key for a locale with placeholders.
@@ -69,10 +70,36 @@ public interface TranslationService<L> {
 	void reload();
 
 	/**
-	 * Access registry for runtime modifications (add/remove translations).
+	 * Register or replace an entry under the given key.
+	 * <p>
+	 * Automatically invalidates cache for the key.
 	 *
-	 * @return translation registry in use
+	 * @param key   translation key
+	 * @param entry compiled entry
 	 */
-	TranslationRegistry getRegistry();
-}
+	void register(String key, TranslationEntry entry);
 
+	/**
+	 * Remove an entry by key (no-op if missing).
+	 * <p>
+	 * Automatically invalidates cache for the key.
+	 *
+	 * @param key translation key
+	 */
+	void unregister(String key);
+
+	/**
+	 * Get all registered keys.
+	 *
+	 * @return set of all keys
+	 */
+	Set<String> getKeys();
+
+	/**
+	 * Get keys starting with the provided prefix.
+	 *
+	 * @param prefix key prefix
+	 * @return keys starting with prefix
+	 */
+	Set<String> getKeysByPrefix(String prefix);
+}

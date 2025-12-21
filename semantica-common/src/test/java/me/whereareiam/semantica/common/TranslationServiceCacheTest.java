@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.common;
 
+import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.common.cache.CacheStrategy;
 import me.whereareiam.semantica.common.cache.TranslationCache;
 import me.whereareiam.semantica.common.processor.ConditionalProcessor;
@@ -7,19 +8,13 @@ import me.whereareiam.semantica.common.processor.MessageReferenceProcessor;
 import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
 import me.whereareiam.semantica.common.processor.TemplateProcessor;
 import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
+import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
 import me.whereareiam.semantica.common.service.DefaultTranslationService;
 import me.whereareiam.semantica.common.util.TagTokens;
-import me.whereareiam.semantica.model.TagConfiguration;
 import me.whereareiam.semantica.model.SemanticLocale;
-import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.SemanticaLogger;
-import me.whereareiam.semantica.model.translation.TranslationEntry;
-import me.whereareiam.semantica.service.LocaleConverter;
-import me.whereareiam.semantica.service.FallbackStrategy;
-import me.whereareiam.semantica.service.TranslationProcessor;
-import me.whereareiam.semantica.service.TranslationRegistry;
-import me.whereareiam.semantica.service.TranslationService;
-import me.whereareiam.semantica.type.MessageType;
+import me.whereareiam.semantica.model.TagConfiguration;
+import me.whereareiam.semantica.model.translation.LocalizedEntry;
+import me.whereareiam.semantica.service.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -47,7 +42,9 @@ class TranslationServiceCacheTest {
 	@Test
 	void staticMessagesAreCached() {
 		TranslationRegistry registry = new DefaultTranslationRegistry();
-		registry.register("static.msg", new TranslationEntry(MessageType.MESSAGE, "hello"));
+		registry.register("static.msg", new LocalizedEntry(Map.of(
+				SemanticLocale.wrap(Locale.US), "hello"
+		)));
 
 		CountingProcessor counter = new CountingProcessor();
 		TranslationService<SemanticLocale> service = createService(registry, Locale.US, List.of(counter));
@@ -61,7 +58,9 @@ class TranslationServiceCacheTest {
 	@Test
 	void dynamicMessagesBypassCache() {
 		TranslationRegistry registry = new DefaultTranslationRegistry();
-		registry.register("dynamic.msg", new TranslationEntry(MessageType.MESSAGE, "hello <p:name>"));
+		registry.register("dynamic.msg", new LocalizedEntry(Map.of(
+				SemanticLocale.wrap(Locale.US), "hello <p:name>"
+		)));
 
 		CountingProcessor counter = new CountingProcessor();
 		TranslationService<SemanticLocale> service = createService(registry, Locale.US, List.of(counter));
@@ -79,7 +78,7 @@ class TranslationServiceCacheTest {
 		TranslationCache cache = new TranslationCache(1024, 512, 30, 5);
 		FallbackStrategy fallback = (key, loc) -> key;
 		DependencyGraph graph = new DependencyGraph(tags);
-		LocaleConverter<SemanticLocale> converter = loc -> loc;
+		LocaleParser<SemanticLocale> parser = loc -> loc;
 
 		List<TranslationProcessor> processors = new ArrayList<>(List.of(
 				new TemplateProcessor(registry, tags),
@@ -90,7 +89,7 @@ class TranslationServiceCacheTest {
 		processors.addAll(extraProcessors);
 
 		TranslationLocale defaultLocale = SemanticLocale.wrap(locale);
-		return new DefaultTranslationService<>(registry, defaultLocale, cache, cacheStrategy, processors, fallback, graph, converter);
+		return new DefaultTranslationService<>(registry, defaultLocale, cache, cacheStrategy, processors, fallback, new DefaultFallbackResolver(), graph, parser, true);
 	}
 }
 

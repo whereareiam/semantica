@@ -9,8 +9,9 @@ import me.whereareiam.semantica.common.cache.CacheStrategy;
 import me.whereareiam.semantica.common.cache.TranslationCache;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
 import me.whereareiam.semantica.model.translation.TranslationRequest;
+import me.whereareiam.semantica.service.FallbackResolver;
 import me.whereareiam.semantica.service.FallbackStrategy;
-import me.whereareiam.semantica.service.LocaleConverter;
+import me.whereareiam.semantica.service.LocaleParser;
 import me.whereareiam.semantica.service.TranslationProcessor;
 import me.whereareiam.semantica.service.TranslationRegistry;
 import me.whereareiam.semantica.service.TranslationService;
@@ -29,9 +30,11 @@ public class DefaultTranslationService<L> implements TranslationService<L> {
 	private final CacheStrategy cacheStrategy;
 	private final List<TranslationProcessor> processors;
 	private final FallbackStrategy fallbackStrategy;
+	private final FallbackResolver fallbackResolver;
+	private final boolean cacheEnabled;
 	@Getter
 	private final DependencyGraph dependencyGraph;
-	private final LocaleConverter<L> localeConverter;
+	private final LocaleParser<L> localeParser;
 
 	public DefaultTranslationService(
 			TranslationRegistry registry,
@@ -40,8 +43,10 @@ public class DefaultTranslationService<L> implements TranslationService<L> {
 			CacheStrategy cacheStrategy,
 			List<TranslationProcessor> processors,
 			FallbackStrategy fallbackStrategy,
+			FallbackResolver fallbackResolver,
 			DependencyGraph dependencyGraph,
-			LocaleConverter<L> localeConverter
+			LocaleParser<L> localeParser,
+			boolean cacheEnabled
 	) {
 		this.registry = registry;
 		this.defaultLocale = defaultLocale;
@@ -49,55 +54,66 @@ public class DefaultTranslationService<L> implements TranslationService<L> {
 		this.cacheStrategy = cacheStrategy;
 		this.processors = new ArrayList<>(processors);
 		this.fallbackStrategy = fallbackStrategy;
+		this.fallbackResolver = fallbackResolver;
 		this.dependencyGraph = dependencyGraph;
-		this.localeConverter = localeConverter;
+		this.localeParser = localeParser;
+		this.cacheEnabled = cacheEnabled;
 
 		this.processors.sort(Comparator.comparingInt(TranslationProcessor::getPriority));
 	}
 
 	/**
 	 * Pre-render all STATIC entries into cache (optional warm-up).
+	 *
+	 * @return number of entries pre-rendered
 	 */
-	public void preRenderStatic() {
+	public int preRenderStatic() {
+		if (!cacheEnabled) return 0;
+
+		int preRendered = 0;
 		var entries = registry.getAllEntries();
 		for (Map.Entry<String, TranslationEntry> e : entries.entrySet()) {
 			String key = e.getKey();
 			TranslationEntry entry = e.getValue();
 
-			String sampleText = entry.hasTranslations()
-					? entry.getText(defaultLocale)
-					: entry.getSingleText();
-			if (sampleText == null) continue;
-
-			CacheLevel level = cacheStrategy.classify(sampleText);
-			if (level != CacheLevel.STATIC) continue;
-
-			// Pre-render for available locales or default
-			if (entry.hasTranslations()) {
-				for (TranslationLocale locale : entry.getLocales()) {
-					String resolved = resolveInternal(key, locale, Map.of());
-					if (resolved != null) {
-						cache.put(new CacheKey(key, locale, Map.of()), resolved, CacheLevel.STATIC);
+			Set<TranslationLocale> locales = entry.getLocales();
+			if (locales.isEmpty()) {
+				// Template entry - pre-render with default locale
+				String text = entry.resolve(defaultLocale, fallbackResolver, defaultLocale, key);
+				if (text != null) {
+					CacheLevel level = cacheStrategy.classify(text);
+					if (level == CacheLevel.STATIC) {
+						cache.put(new CacheKey(key, defaultLocale, Map.of()), text, CacheLevel.STATIC);
+						preRendered++;
 					}
 				}
-			} else {
-				String resolved = resolveInternal(key, defaultLocale, Map.of());
-				if (resolved != null) {
-					cache.put(new CacheKey(key, defaultLocale, Map.of()), resolved, CacheLevel.STATIC);
+				continue;
+			}
+
+			// Localized entry - pre-render for each locale
+			for (TranslationLocale locale : locales) {
+				String text = entry.resolve(locale, fallbackResolver, defaultLocale, key);
+				if (text != null) {
+					CacheLevel level = cacheStrategy.classify(text);
+					if (level == CacheLevel.STATIC) {
+						cache.put(new CacheKey(key, locale, Map.of()), processPipeline(text, locale, Map.of()), CacheLevel.STATIC);
+						preRendered++;
+					}
 				}
 			}
 		}
+		return preRendered;
 	}
 
 	@Override
-	public String resolve(TranslationRequest request) {
-		TranslationLocale locale = request.getLocale();
+	public String resolve(TranslationRequest<L> request) {
+		TranslationLocale locale = localeParser.parse(request.getLocale());
 		return resolveInternal(request.getKey(), locale, request.getPlaceholders());
 	}
 
 	@Override
 	public String resolve(String key, L locale, Map<String, Object> placeholders) {
-		TranslationLocale translationLocale = localeConverter.convert(locale);
+		TranslationLocale translationLocale = localeParser.parse(locale);
 		return resolveInternal(key, translationLocale, placeholders);
 	}
 
@@ -112,11 +128,13 @@ public class DefaultTranslationService<L> implements TranslationService<L> {
 			return fallbackStrategy.getFallback(key, locale);
 		}
 
-		String text = entry.hasTranslations()
-				? entry.getText(locale, defaultLocale, key)
-				: entry.getSingleText();
-
+		String text = entry.resolve(locale, fallbackResolver, defaultLocale, key);
 		if (text == null) return fallbackStrategy.getFallback(key, locale);
+
+		// Check if caching is enabled
+		if (!cacheEnabled) {
+			return processPipeline(text, locale, placeholders);
+		}
 
 		CacheLevel level = cacheStrategy.classify(text);
 		if (level != CacheLevel.DYNAMIC) {
@@ -156,8 +174,25 @@ public class DefaultTranslationService<L> implements TranslationService<L> {
 	}
 
 	@Override
-	public TranslationRegistry getRegistry() {
-		return registry;
+	public void register(String key, TranslationEntry entry) {
+		registry.register(key, entry);
+		cache.invalidate(key);
+	}
+
+	@Override
+	public void unregister(String key) {
+		registry.unregister(key);
+		cache.invalidate(key);
+	}
+
+	@Override
+	public Set<String> getKeys() {
+		return registry.getKeys();
+	}
+
+	@Override
+	public Set<String> getKeysByPrefix(String prefix) {
+		return registry.getKeysByPrefix(prefix);
 	}
 }
 

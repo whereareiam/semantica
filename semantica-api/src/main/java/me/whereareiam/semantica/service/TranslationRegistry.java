@@ -61,4 +61,3 @@ public interface TranslationRegistry {
 	 */
 	void clear();
 }
-

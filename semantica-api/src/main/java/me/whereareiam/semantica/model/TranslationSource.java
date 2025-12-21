@@ -7,16 +7,17 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Represents a translation entry with text value and optional metadata.
+ * Source data for a translation loaded from provider.
+ * <p>
+ * This represents raw translation data before compilation into entries.
  */
 @Getter
 @AllArgsConstructor
-public class Translation {
+public class TranslationSource {
 	private final TextValue text;
 	private final Map<String, String> metadata;
 
-	public Translation(TextValue text) {
-		this.text = text;
-		this.metadata = Collections.emptyMap();
+	public TranslationSource(TextValue text) {
+		this(text, Collections.emptyMap());
 	}
 }

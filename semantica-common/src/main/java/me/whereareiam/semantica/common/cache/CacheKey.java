@@ -1,11 +1,13 @@
 package me.whereareiam.semantica.common.cache;
 
+import lombok.Getter;
 import me.whereareiam.semantica.TranslationLocale;
 
 import java.util.Map;
 import java.util.Objects;
 
 public final class CacheKey {
+	@Getter
 	private final String key;
 	private final TranslationLocale locale;
 	private final Map<String, Object> placeholders;

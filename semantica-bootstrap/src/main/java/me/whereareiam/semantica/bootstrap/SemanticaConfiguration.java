@@ -8,7 +8,7 @@ import me.whereareiam.semantica.SemanticaLogger;
 import me.whereareiam.semantica.model.SemanticLocale;
 import me.whereareiam.semantica.model.TagConfiguration;
 import me.whereareiam.semantica.service.FallbackStrategy;
-import me.whereareiam.semantica.service.LocaleConverter;
+import me.whereareiam.semantica.service.LocaleParser;
 import me.whereareiam.semantica.service.TranslationProcessor;
 import me.whereareiam.semantica.service.TranslationProvider;
 
@@ -22,7 +22,7 @@ public class SemanticaConfiguration<L> {
 	private final TranslationLocale defaultLocale = SemanticLocale.wrap(Locale.getDefault());
 
 	@Builder.Default
-	private final CacheSettings cache = CacheSettings.defaults();
+	private final PerformanceSettings performance = PerformanceSettings.defaults();
 
 	@Builder.Default
 	private final TagConfiguration tagConfiguration = TagConfiguration.defaults();
@@ -30,7 +30,7 @@ public class SemanticaConfiguration<L> {
 	@Singular("processor")
 	private final List<TranslationProcessor> customProcessors;
 
-	private final LocaleConverter<L> localeConverter;
+	private final LocaleParser<L> localeParser;
 
 	private final TranslationProvider<L> translationProvider;
 
@@ -46,20 +46,44 @@ public class SemanticaConfiguration<L> {
 
 	@Getter
 	@Builder(toBuilder = true)
-	public static class CacheSettings {
+	public static class PerformanceSettings {
 		@Builder.Default
-		private final int semiStaticCacheSize = 1024;
+		private final CacheSettings cache = CacheSettings.defaults();
+		
 		@Builder.Default
-		private final int dynamicCacheSize = 512;
+		private final boolean prerenderStatic = true;
+		
 		@Builder.Default
-		private final long semiStaticExpireMinutes = 30;
+		private final boolean buildDependencyGraph = true;
+		
 		@Builder.Default
-		private final long dynamicExpireMinutes = 5;
-		@Builder.Default
-		private final boolean preRenderStatic = true;
+		private final boolean logTimings = false;
 
-		public static CacheSettings defaults() {
-			return CacheSettings.builder().build();
+		public static PerformanceSettings defaults() {
+			return PerformanceSettings.builder().build();
+		}
+
+		@Getter
+		@Builder(toBuilder = true)
+		public static class CacheSettings {
+			@Builder.Default
+			private final boolean enabled = true;
+			
+			@Builder.Default
+			private final int semiStaticSize = 1024;
+			
+			@Builder.Default
+			private final int dynamicSize = 512;
+			
+			@Builder.Default
+			private final int semiStaticExpireMinutes = 30;
+			
+			@Builder.Default
+			private final int dynamicExpireMinutes = 5;
+
+			public static CacheSettings defaults() {
+				return CacheSettings.builder().build();
+			}
 		}
 	}
 }

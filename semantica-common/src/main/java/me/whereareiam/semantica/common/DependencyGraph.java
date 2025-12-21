@@ -1,6 +1,7 @@
 package me.whereareiam.semantica.common;
 
 import lombok.Getter;
+import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
 
@@ -55,14 +56,21 @@ public class DependencyGraph {
 	}
 
 	private String anyText(TranslationEntry entry) {
-		if (entry.getSingleText() != null) return entry.getSingleText();
-		if (entry.hasTranslations() && !entry.getLocales().isEmpty()) {
-			var locale = entry.getLocales().iterator().next();
-			var text = entry.getText(locale);
-			if (text != null) return text;
+		Set<TranslationLocale> locales = entry.getLocales();
+		
+		if (locales.isEmpty()) {
+			// Template entry - resolve without locale
+			String text = entry.resolve(null, (translations, locale, defaultLocale, key) -> "", null, "");
+			return text != null && !text.isEmpty() ? text : "";
 		}
-
-		return "";
+		
+		// Localized entry - get first available translation  
+		var locale = locales.iterator().next();
+		String text = entry.resolve(locale, (translations, l, d, k) -> {
+			// Directly get from map
+			return translations.get(locale);
+		}, null, "");
+		return text != null ? text : "";
 	}
 
 	private boolean detectCycle(String key, Set<String> path) {

@@ -1,8 +1,10 @@
 package me.whereareiam.semantica.common.processor;
 
 import me.whereareiam.semantica.TranslationLocale;
+import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
 import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.translation.TranslationEntry;
+import me.whereareiam.semantica.service.FallbackResolver;
 import me.whereareiam.semantica.service.TranslationProcessor;
 import me.whereareiam.semantica.service.TranslationRegistry;
 
@@ -20,6 +22,8 @@ public class MessageReferenceProcessor implements TranslationProcessor {
 	private final TranslationRegistry registry;
 	private final TagTokens tags;
 	private final Pattern pattern;
+
+	private final FallbackResolver fallbackResolver = new DefaultFallbackResolver();
 
 	public MessageReferenceProcessor(TranslationRegistry registry, TagTokens tags) {
 		this.registry = registry;
@@ -53,8 +57,8 @@ public class MessageReferenceProcessor implements TranslationProcessor {
 				continue;
 			}
 
-			String entryText = entry.hasTranslations() ? entry.getText(locale) : entry.getSingleText();
-			if (entryText == null) {
+			String entryText = entry.resolve(locale, fallbackResolver, null, key);
+			if (entryText == null || entryText.equals(key)) {
 				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
 				continue;
 			}

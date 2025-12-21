@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.service;
 
-import me.whereareiam.semantica.model.Translation;
+import me.whereareiam.semantica.model.TranslationSource;
 
 import java.util.Map;
 
@@ -11,16 +11,15 @@ import java.util.Map;
  * at once rather than using a callback pattern. Users can implement this to load
  * translations from any format (files, database, HTTP, etc.).
  * <p>
- * The provider returns a nested map structure: locale -> key -> Translation
+ * The provider returns a nested map structure: locale -> key -> TranslationSource
  *
  * @param <L> the locale type
  */
-@FunctionalInterface
 public interface TranslationProvider<L> {
 	/**
 	 * Provide all translations for all locales.
 	 *
-	 * @return nested map: locale -> translation key -> Translation object
+	 * @return nested map: locale -> translation key -> TranslationSource object
 	 */
-	Map<L, Map<String, Translation>> provideAll();
+	Map<L, Map<String, TranslationSource>> provideAll();
 }
