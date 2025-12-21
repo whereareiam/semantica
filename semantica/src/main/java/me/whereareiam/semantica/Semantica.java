@@ -3,6 +3,7 @@ package me.whereareiam.semantica;
 import me.whereareiam.semantica.common.translation.DefaultTranslationRegistry;
 import me.whereareiam.semantica.locale.LocaleParser;
 import me.whereareiam.semantica.model.RebuildMetrics;
+import me.whereareiam.semantica.model.ProviderResult;
 import me.whereareiam.semantica.model.translation.TranslationSource;
 import me.whereareiam.semantica.model.translation.entry.LocalizedEntry;
 import me.whereareiam.semantica.translation.*;
@@ -95,7 +96,10 @@ public final class Semantica {
 			TranslationRegistry registry,
 			LocaleParser<L> localeParser
 	) {
-		Map<L, Map<String, TranslationSource>> allTranslations = provider.provideAll();
+		ProviderResult<L> data = provider.provide();
+		
+		// Load localized entries
+		Map<L, Map<String, TranslationSource>> allTranslations = data.getLocalized();
 		
 		// Group translations by key
 		Map<String, Map<TranslationLocale, TranslationSource>> grouped = new HashMap<>();
@@ -119,6 +123,9 @@ public final class Semantica {
 			LocalizedEntry entry = new LocalizedEntry(textMap);
 			registry.register(key, entry);
 		});
+		
+		// Register template entries
+		data.getTemplates().forEach(registry::register);
 	}
 
 }

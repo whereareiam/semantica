@@ -1,25 +1,20 @@
 package me.whereareiam.semantica.translation.base;
 
-import me.whereareiam.semantica.model.translation.TranslationSource;
-
-import java.util.Map;
+import me.whereareiam.semantica.model.ProviderResult;
 
 /**
  * Provides translations from any source.
  * <p>
- * This is a simpler alternative to TranslationLoader that returns all translations
- * at once rather than using a callback pattern. Users can implement this to load
- * translations from any format (files, database, HTTP, etc.).
- * <p>
- * The provider returns a nested map structure: locale -> key -> TranslationSource
+ * Users can implement this to load translations from any format (files, database, HTTP, etc.).
+ * The provider returns both localized entries (varying by locale) and template entries (non-localized).
  *
  * @param <L> the locale type
  */
 public interface TranslationProvider<L> {
 	/**
-	 * Provide all translations for all locales.
+	 * Provide all translation data including localized entries and templates.
 	 *
-	 * @return nested map: locale -> translation key -> TranslationSource object
+	 * @return ProviderResult containing both localized and template entries
 	 */
-	Map<L, Map<String, TranslationSource>> provideAll();
+	ProviderResult<L> provide();
 }
