@@ -9,8 +9,8 @@ import me.whereareiam.semantica.model.SemanticLocale;
 import me.whereareiam.semantica.model.TagConfiguration;
 import me.whereareiam.semantica.service.FallbackStrategy;
 import me.whereareiam.semantica.service.LocaleConverter;
-import me.whereareiam.semantica.service.TranslationLoader;
 import me.whereareiam.semantica.service.TranslationProcessor;
+import me.whereareiam.semantica.service.TranslationProvider;
 
 import java.util.List;
 import java.util.Locale;
@@ -32,7 +32,7 @@ public class SemanticaConfiguration<L> {
 
 	private final LocaleConverter<L> localeConverter;
 
-	private final TranslationLoader customLoader;
+	private final TranslationProvider<L> translationProvider;
 
 	@Builder.Default
 	private final FallbackStrategy fallbackStrategy = new DefaultFallbackStrategy();

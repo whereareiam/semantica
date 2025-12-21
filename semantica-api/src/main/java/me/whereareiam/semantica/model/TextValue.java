@@ -23,6 +23,30 @@ public abstract class TextValue {
 	public abstract String asString();
 
 	/**
+	 * Extracts text from various input types and converts to TextValue.
+	 *
+	 * @param value the input value (String, List, or TextValue)
+	 * @return the extracted TextValue
+	 * @throws IllegalArgumentException if the value type is unsupported
+	 */
+	public static TextValue from(Object value) {
+		if (value instanceof String str)
+			return new StringValue(str);
+
+		if (value instanceof List<?> list) {
+			List<String> strings = list.stream()
+					.map(Object::toString)
+					.toList();
+			return new ListValue(strings);
+		}
+
+		if (value instanceof TextValue textValue)
+			return textValue;
+
+		throw new IllegalArgumentException("Unsupported value type: " + value.getClass());
+	}
+
+	/**
 	 * String variant.
 	 */
 	@Getter

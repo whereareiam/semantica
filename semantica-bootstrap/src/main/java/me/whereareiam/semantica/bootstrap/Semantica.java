@@ -5,7 +5,6 @@ import me.whereareiam.semantica.TranslationLocale;
 import me.whereareiam.semantica.common.DependencyGraph;
 import me.whereareiam.semantica.common.cache.CacheStrategy;
 import me.whereareiam.semantica.common.cache.TranslationCache;
-import me.whereareiam.semantica.common.loader.DefaultTranslationLoader;
 import me.whereareiam.semantica.common.processor.ConditionalProcessor;
 import me.whereareiam.semantica.common.processor.MessageReferenceProcessor;
 import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
@@ -14,10 +13,15 @@ import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
 import me.whereareiam.semantica.common.service.DefaultTranslationService;
 import me.whereareiam.semantica.common.util.TagTokens;
 import me.whereareiam.semantica.model.TagConfiguration;
+import me.whereareiam.semantica.model.Translation;
+import me.whereareiam.semantica.model.translation.TranslationEntry;
 import me.whereareiam.semantica.service.*;
+import me.whereareiam.semantica.type.MessageType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bootstrap entrypoint for Semantica.
@@ -73,6 +77,10 @@ public final class Semantica {
 		if (registry instanceof DefaultTranslationRegistry dtr)
 			dtr.setOnClear(cache::clear);
 
+		// Load translations if provider is configured
+		if (config.getTranslationProvider() != null)
+			loadFromProvider(config.getTranslationProvider(), registry, localeConverter);
+
 		if (config.getCache().isPreRenderStatic())
 			service.preRenderStatic();
 
@@ -91,8 +99,35 @@ public final class Semantica {
 		};
 	}
 
-	public static TranslationLoader createLoader(TranslationRegistry registry) {
-		return new DefaultTranslationLoader(registry);
+	private static <L> void loadFromProvider(
+			TranslationProvider<L> provider,
+			TranslationRegistry registry,
+			LocaleConverter<L> localeConverter
+	) {
+		Map<L, Map<String, Translation>> allTranslations = provider.provideAll();
+		
+		// Group translations by key
+		Map<String, Map<TranslationLocale, String>> grouped = new HashMap<>();
+		
+		allTranslations.forEach((locale, translations) -> {
+			TranslationLocale translationLocale = localeConverter.convert(locale);
+			translations.forEach((key, translation) -> {
+				String text = translation.getText().asString();
+				grouped.computeIfAbsent(key, k -> new HashMap<>())
+						.put(translationLocale, text);
+			});
+		});
+		
+		// Register grouped entries
+		grouped.forEach((key, localeMap) -> {
+			TranslationEntry entry =
+					new TranslationEntry(
+							MessageType.MESSAGE,
+							localeMap
+					);
+			registry.register(key, entry);
+		});
 	}
+
 }
 

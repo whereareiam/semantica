@@ -69,7 +69,7 @@ public interface TranslationService<L> {
 	void reload();
 
 	/**
-	 * Access registry for runtime modifications (register/unregister/clear).
+	 * Access registry for runtime modifications (add/remove translations).
 	 *
 	 * @return translation registry in use
 	 */

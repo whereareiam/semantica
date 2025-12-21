@@ -7,7 +7,18 @@ import me.whereareiam.semantica.type.MessageType;
 import java.util.Map;
 
 /**
- * Parsed data from translation file.
+ * Represents a structured translation document format.
+ * <p>
+ * This is one way to organize translations, but not the only way.
+ * When using {@link me.whereareiam.semantica.service.TranslationProvider},
+ * you can use any format you prefer and convert it to the required structure.
+ * <p>
+ * This model is useful when you want to:
+ * <ul>
+ *   <li>Organize translations with a specific message type</li>
+ *   <li>Include metadata for each translation</li>
+ *   <li>Use a consistent structure across projects</li>
+ * </ul>
  */
 @Getter
 @Setter
