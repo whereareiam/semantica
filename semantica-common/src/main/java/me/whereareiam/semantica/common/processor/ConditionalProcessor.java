@@ -1,8 +1,8 @@
 package me.whereareiam.semantica.common.processor;
 
 import me.whereareiam.semantica.common.TagTokens;
-import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.service.TranslationProcessor;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
 
 import java.util.Map;
 
@@ -28,6 +28,7 @@ public class ConditionalProcessor implements TranslationProcessor {
 			if (next.equals(result)) break;
 			result = next;
 		}
+
 		return result;
 	}
 
@@ -50,17 +51,20 @@ public class ConditionalProcessor implements TranslationProcessor {
 				pos += tags.conditionalIfTag.length();
 				continue;
 			}
+
 			if (text.startsWith(tags.conditionalElseTag, pos) && depth == 1 && elsePos == -1) {
 				elsePos = pos;
 				pos += tags.conditionalElseTag.length();
 				continue;
 			}
+
 			if (text.startsWith(tags.conditionalIfCloseTag, pos)) {
 				depth--;
 				if (depth == 0) break;
 				pos += tags.conditionalIfCloseTag.length();
 				continue;
 			}
+
 			pos++;
 		}
 		if (depth != 0) return text;
@@ -91,6 +95,7 @@ public class ConditionalProcessor implements TranslationProcessor {
 			Object value = placeholders != null ? placeholders.get(left) : null;
 			return value != null && right.equals(String.valueOf(value));
 		}
+
 		if (condition.contains("!=")) {
 			String[] parts = condition.split("!=", 2);
 			String left = parts[0].trim();
@@ -103,6 +108,7 @@ public class ConditionalProcessor implements TranslationProcessor {
 		Object value = placeholders != null ? placeholders.get(condition) : null;
 		if (value == null) return false;
 		String str = String.valueOf(value);
+
 		return !(str.equalsIgnoreCase("false") || str.equals("0") || str.isBlank());
 	}
 

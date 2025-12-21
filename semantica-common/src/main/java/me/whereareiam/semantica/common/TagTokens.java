@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.common;
 
-import me.whereareiam.semantica.model.TagConfiguration;
+import me.whereareiam.semantica.TagConfiguration;
 
 /**
  * Precomputed tag tokens from configuration.

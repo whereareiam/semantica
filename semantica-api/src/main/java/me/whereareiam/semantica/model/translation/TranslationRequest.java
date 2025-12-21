@@ -19,4 +19,3 @@ public class TranslationRequest<L> {
 	private final L locale;
 	private final Map<String, Object> placeholders;
 }
-

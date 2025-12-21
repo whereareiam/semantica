@@ -1,23 +1,16 @@
 package me.whereareiam.semantica;
 
-import me.whereareiam.semantica.common.DependencyGraph;
-import me.whereareiam.semantica.common.cache.CacheStrategy;
-import me.whereareiam.semantica.common.cache.TranslationCache;
-import me.whereareiam.semantica.common.processor.ConditionalProcessor;
-import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
-import me.whereareiam.semantica.common.processor.ReferenceProcessor;
-import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
-import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
-import me.whereareiam.semantica.common.service.DefaultTranslationService;
-import me.whereareiam.semantica.common.TagTokens;
-import me.whereareiam.semantica.model.TagConfiguration;
-import me.whereareiam.semantica.model.TranslationSource;
-import me.whereareiam.semantica.model.translation.LocalizedEntry;
-import me.whereareiam.semantica.service.*;
+import me.whereareiam.semantica.common.translation.DefaultTranslationRegistry;
+import me.whereareiam.semantica.locale.LocaleParser;
+import me.whereareiam.semantica.model.RebuildMetrics;
+import me.whereareiam.semantica.model.translation.TranslationSource;
+import me.whereareiam.semantica.model.translation.entry.LocalizedEntry;
+import me.whereareiam.semantica.translation.*;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
+import me.whereareiam.semantica.translation.base.TranslationProvider;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,44 +29,34 @@ public final class Semantica {
 			throw new IllegalArgumentException("LocaleParser is required. Please provide one via SemanticaConfiguration.builder().localeParser(...)");
 		}
 
-		TagConfiguration tagConfig = config.getTagConfiguration();
-		TagTokens tags = new TagTokens(tagConfig);
-
 		SemanticaLogger logger = config.getLogger();
-		FallbackStrategy fallback = config.getFallbackStrategy();
-		FallbackResolver fallbackResolver = new DefaultFallbackResolver();
 
-		CacheStrategy cacheStrategy = new CacheStrategy(tags);
-		TranslationCache cache = new TranslationCache(
-				config.getPerformance().getCache().getSemiStaticSize(),
-				config.getPerformance().getCache().getDynamicSize(),
-				config.getPerformance().getCache().getSemiStaticExpireMinutes(),
-				config.getPerformance().getCache().getDynamicExpireMinutes()
-		);
+		// Build service using Lombok-generated builder
+		TranslationServiceFactory.Builder<L> factoryBuilder = TranslationServiceFactory.<L>configuration()
+				.registry(registry)
+				.defaultLocale(config.getDefaultLocale())
+				.localeParser(localeParser)
+				.fallbackStrategy(config.getFallbackStrategy())
+				.tagConfiguration(config.getTagConfiguration())
+				.cacheSettings(
+						new TranslationServiceFactory.CacheSettings(
+								config.getPerformance().getCache().isEnabled(),
+								config.getPerformance().getCache().getSemiStaticSize(),
+								config.getPerformance().getCache().getDynamicSize(),
+								config.getPerformance().getCache().getSemiStaticExpireMinutes(),
+								config.getPerformance().getCache().getDynamicExpireMinutes()
+						)
+				);
 
-		DependencyGraph dependencyGraph = new DependencyGraph(tags);
+		// Add custom processors
+		for (TranslationProcessor processor : config.getCustomProcessors())
+			factoryBuilder.processor(processor);
 
-		List<TranslationProcessor> processors = new ArrayList<>();
-		processors.add(new ReferenceProcessor(registry, tags));
-		processors.add(new ConditionalProcessor(tags));
-		processors.add(new PlaceholderProcessor(tags));
-		processors.addAll(config.getCustomProcessors());
+		TranslationService<L> service = factoryBuilder.build().build();
 
-		DefaultTranslationService<L> service = new DefaultTranslationService<>(
-				registry,
-				config.getDefaultLocale(),
-				cache,
-				cacheStrategy,
-				processors,
-				fallback,
-				fallbackResolver,
-				dependencyGraph,
-				localeParser,
-				config.getPerformance().getCache().isEnabled()
-		);
-
+		// Setup registry clear callback
 		if (registry instanceof DefaultTranslationRegistry dtr)
-			dtr.setOnClear(cache::clear);
+			dtr.setOnClear(service::clearCache);
 
 		// Load translations if provider is configured
 		if (config.getTranslationProvider() != null) {
@@ -88,33 +71,19 @@ public final class Semantica {
 		}
 
 		// Post-loading optimizations
-		boolean shouldBuildGraph = config.getPerformance().isBuildDependencyGraph();
-		boolean shouldPrerender = config.getPerformance().isPrerenderStatic() && config.getPerformance().getCache().isEnabled();
+		boolean shouldOptimize = config.getPerformance().isBuildDependencyGraph() || 
+				(config.getPerformance().isPrerenderStatic() && config.getPerformance().getCache().isEnabled());
 
-		if (shouldBuildGraph || shouldPrerender) {
+		if (shouldOptimize) {
 			long startTime = config.getPerformance().isLogTimings() ? System.currentTimeMillis() : 0;
 
-			if (shouldBuildGraph) {
-				dependencyGraph.build(registry.getAllEntries());
-				
-				// Log circular dependencies
-				for (String key : registry.getKeys()) {
-					if (dependencyGraph.hasCircularDependency(key)) {
-						logger.warn("Circular dependency detected for key: " + key);
-					}
-				}
-			}
-
-			if (shouldPrerender) {
-				int preRendered = service.preRenderStatic();
-				if (config.getPerformance().isLogTimings()) {
-					logger.info("Pre-rendered " + preRendered + " static translations");
-				}
-			}
-
+			// Rebuild handles both graph building and pre-rendering
+			RebuildMetrics stats = service.rebuild();
+			
 			if (config.getPerformance().isLogTimings()) {
-				long duration = System.currentTimeMillis() - startTime;
-				logger.info("Finished compilation in " + duration + " ms");
+				logger.info("Compiled " + stats.getTotalKeys() + " translations in " + stats.getDurationMs() + " ms");
+				logger.info("  - Pre-rendered: " + stats.getPrerenderedEntries());
+				logger.info("  - Circular dependencies: " + stats.getCircularDependencies());
 			}
 		}
 

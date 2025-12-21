@@ -3,18 +3,20 @@ package me.whereareiam.semantica;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
+import me.whereareiam.semantica.locale.LocaleParser;
 import me.whereareiam.semantica.model.SemanticLocale;
-import me.whereareiam.semantica.model.TagConfiguration;
-import me.whereareiam.semantica.service.FallbackStrategy;
-import me.whereareiam.semantica.service.LocaleParser;
-import me.whereareiam.semantica.service.TranslationProcessor;
-import me.whereareiam.semantica.service.TranslationProvider;
+import me.whereareiam.semantica.predefined.DefaultFallbackStrategy;
+import me.whereareiam.semantica.predefined.DefaultSemanticaLogger;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
+import me.whereareiam.semantica.translation.base.TranslationProvider;
 
 import java.util.List;
 import java.util.Locale;
 
 @Getter
 @Builder(toBuilder = true)
+@SuppressWarnings("unused")
 public class SemanticaConfiguration<L> {
 	@Builder.Default
 	private final TranslationLocale defaultLocale = SemanticLocale.wrap(Locale.getDefault());
@@ -36,7 +38,7 @@ public class SemanticaConfiguration<L> {
 	private final FallbackStrategy fallbackStrategy = new DefaultFallbackStrategy();
 
 	@Builder.Default
-	private final SemanticaLogger logger = new ConsoleSemanticaLogger();
+	private final SemanticaLogger logger = new DefaultSemanticaLogger();
 
 	public static <L> SemanticaConfigurationBuilder<L> builderWithLocale(Locale locale) {
 		return SemanticaConfiguration.<L>builder().defaultLocale(SemanticLocale.wrap(locale));

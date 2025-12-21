@@ -1,12 +1,12 @@
 package me.whereareiam.semantica.common.processor;
 
-import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
+import me.whereareiam.semantica.common.DefaultLocaleResolver;
 import me.whereareiam.semantica.common.TagTokens;
-import me.whereareiam.semantica.model.translation.TranslationEntry;
-import me.whereareiam.semantica.service.FallbackResolver;
-import me.whereareiam.semantica.service.TranslationProcessor;
-import me.whereareiam.semantica.service.TranslationRegistry;
+import me.whereareiam.semantica.model.translation.entry.TranslationEntry;
+import me.whereareiam.semantica.locale.LocaleResolver;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
+import me.whereareiam.semantica.translation.TranslationRegistry;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,17 +20,19 @@ import java.util.regex.Pattern;
  * Combines functionality of message references and templates.
  */
 public class ReferenceProcessor implements TranslationProcessor {
-	private static final int MAX_DEPTH = 10;
 	private final TranslationRegistry registry;
 	private final TagTokens tags;
+
 	private final Pattern referencePattern;
 	private final Pattern paramPattern = Pattern.compile("([a-zA-Z0-9_\\-]+)='([^']*)'");
+	private final int maxDepth;
 
-	private final FallbackResolver fallbackResolver = new DefaultFallbackResolver();
+	private final LocaleResolver localeResolver = new DefaultLocaleResolver();
 
-	public ReferenceProcessor(TranslationRegistry registry, TagTokens tags) {
+	public ReferenceProcessor(TranslationRegistry registry, TagTokens tags, int maxDepth) {
 		this.registry = registry;
 		this.tags = tags;
+		this.maxDepth = maxDepth;
 		this.referencePattern = Pattern.compile("<" + Pattern.quote(tags.referenceTag.substring(1)) + "([a-zA-Z0-9_.\\-]+)(?:\\s+((?:[^>']|'[^']*')*))?>", Pattern.DOTALL);
 	}
 
@@ -38,12 +40,37 @@ public class ReferenceProcessor implements TranslationProcessor {
 	public String process(String text, TranslationLocale locale, Map<String, Object> placeholders) {
 		if (text == null || text.isEmpty()) return text;
 		if (!text.contains(tags.referenceTag)) return text;
+		
+		if (maxDepth < 0) {
+			return resolveUntilStable(text, locale);
+		}
+
 		return resolve(text, locale, new HashSet<>(), 0);
 	}
 
-	private String resolve(String text, TranslationLocale locale, Set<String> path, int depth) {
-		if (depth >= MAX_DEPTH) return text;
+	private String resolveUntilStable(String text, TranslationLocale locale) {
+		String current = text;
+		String previous;
+		Set<String> path = new HashSet<>();
+		
+		do {
+			previous = current;
+			current = resolveSinglePass(current, locale, path);
+		} while (!current.equals(previous));
+		
+		return current;
+	}
 
+	private String resolve(String text, TranslationLocale locale, Set<String> path, int depth) {
+		if (depth >= maxDepth) return text;
+		return resolveSinglePass(text, locale, path, depth);
+	}
+
+	private String resolveSinglePass(String text, TranslationLocale locale, Set<String> path) {
+		return resolveSinglePass(text, locale, path, -1);
+	}
+
+	private String resolveSinglePass(String text, TranslationLocale locale, Set<String> path, int depth) {
 		Matcher matcher = referencePattern.matcher(text);
 		StringBuilder result = new StringBuilder();
 
@@ -62,7 +89,7 @@ public class ReferenceProcessor implements TranslationProcessor {
 				continue;
 			}
 
-			String entryText = entry.resolve(locale, fallbackResolver, null, key);
+			String entryText = entry.resolve(locale, localeResolver, null, key);
 			if (entryText == null || entryText.equals(key)) {
 				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
 				continue;
@@ -78,7 +105,14 @@ public class ReferenceProcessor implements TranslationProcessor {
 
 			Set<String> newPath = new HashSet<>(path);
 			newPath.add(key);
-			String resolved = resolve(entryText, locale, newPath, depth + 1);
+			
+			String resolved;
+			if (depth >= 0) {
+				resolved = resolve(entryText, locale, newPath, depth + 1);
+			} else {
+				resolved = entryText;
+			}
+			
 			matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
 		}
 		matcher.appendTail(result);

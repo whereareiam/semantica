@@ -1,21 +1,14 @@
 package me.whereareiam.semantica.common;
 
-import me.whereareiam.semantica.TranslationLocale;
-import me.whereareiam.semantica.common.cache.CacheStrategy;
-import me.whereareiam.semantica.common.cache.TranslationCache;
-import me.whereareiam.semantica.common.processor.ConditionalProcessor;
-import me.whereareiam.semantica.common.processor.PlaceholderProcessor;
-import me.whereareiam.semantica.common.processor.ReferenceProcessor;
-import me.whereareiam.semantica.common.registry.DefaultTranslationRegistry;
-import me.whereareiam.semantica.common.service.DefaultFallbackResolver;
-import me.whereareiam.semantica.common.service.DefaultTranslationService;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
+import me.whereareiam.semantica.common.translation.DefaultTranslationRegistry;
 import me.whereareiam.semantica.model.SemanticLocale;
-import me.whereareiam.semantica.model.TagConfiguration;
-import me.whereareiam.semantica.model.translation.LocalizedEntry;
-import me.whereareiam.semantica.service.*;
+import me.whereareiam.semantica.model.translation.entry.LocalizedEntry;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
+import me.whereareiam.semantica.translation.TranslationRegistry;
+import me.whereareiam.semantica.translation.TranslationService;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -70,23 +63,17 @@ class TranslationServiceCacheTest {
 	}
 
 	private TranslationService<SemanticLocale> createService(TranslationRegistry registry, Locale locale, List<TranslationProcessor> extraProcessors) {
-		TagConfiguration cfg = TagConfiguration.defaults();
-		TagTokens tags = new TagTokens(cfg);
-		CacheStrategy cacheStrategy = new CacheStrategy(tags);
-		TranslationCache cache = new TranslationCache(1024, 512, 30, 5);
-		FallbackStrategy fallback = (key, loc) -> key;
-		DependencyGraph graph = new DependencyGraph(tags);
-		LocaleParser<SemanticLocale> parser = loc -> loc;
+		TranslationServiceBuilder<SemanticLocale> builder = TranslationServiceBuilder.<SemanticLocale>create(
+				registry,
+				SemanticLocale.wrap(locale),
+				loc -> loc
+		);
 
-		List<TranslationProcessor> processors = new ArrayList<>(List.of(
-				new ReferenceProcessor(registry, tags),
-				new ConditionalProcessor(tags),
-				new PlaceholderProcessor(tags)
-		));
-		processors.addAll(extraProcessors);
+		for (TranslationProcessor processor : extraProcessors) {
+			builder.addProcessor(processor);
+		}
 
-		TranslationLocale defaultLocale = SemanticLocale.wrap(locale);
-		return new DefaultTranslationService<>(registry, defaultLocale, cache, cacheStrategy, processors, fallback, new DefaultFallbackResolver(), graph, parser, true);
+		return builder.build();
 	}
 }
 

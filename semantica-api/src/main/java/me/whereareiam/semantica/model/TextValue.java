@@ -109,6 +109,7 @@ public abstract class TextValue {
 		public boolean equals(Object o) {
 			if (this == o) return true;
 			if (!(o instanceof ListValue that)) return false;
+
 			return Objects.equals(value, that.value);
 		}
 

@@ -1,8 +1,8 @@
 package me.whereareiam.semantica.common.processor;
 
-import me.whereareiam.semantica.TranslationLocale;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
 import me.whereareiam.semantica.common.TagTokens;
-import me.whereareiam.semantica.service.TranslationProcessor;
+import me.whereareiam.semantica.translation.base.TranslationProcessor;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,9 +34,12 @@ public class PlaceholderProcessor implements TranslationProcessor {
 			} else {
 				replacement = matcher.group(0);
 			}
+
 			matcher.appendReplacement(result, replacement);
 		}
+
 		matcher.appendTail(result);
+
 		return result.toString();
 	}
 

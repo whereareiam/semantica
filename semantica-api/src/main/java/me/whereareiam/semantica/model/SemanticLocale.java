@@ -1,7 +1,7 @@
 package me.whereareiam.semantica.model;
 
 import lombok.Getter;
-import me.whereareiam.semantica.TranslationLocale;
+import me.whereareiam.semantica.translation.base.TranslationLocale;
 
 import java.util.Locale;
 
