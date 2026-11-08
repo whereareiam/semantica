@@ -63,6 +63,7 @@ class SemanticaCliTest {
 		write("en/realm/vanilla/mode/bedwars/bed.json", "{\"broken\": \"<hover:show_text:'{team}'>Your bed</hover> is gone, {team}\"}");
 		write("en/website/home.json", "{\"title\": \"<gren> is just text here\", \"unit\": \"{count, plural, one {# unit} other {# units}}\"}");
 		write("ru/game/menu.json", "{\"title\": \"<gold>Меню</gold>\"}");
+		write("all/game/link.json", "{\"menu\": \"{@game.menu.title}!\"}");
 		write("ru/website/home.json", "{\"unit\": \"{count, plural, one {# единица} few {# единицы} many {# единиц} other {# единицы}}\"}");
 	}
 
@@ -71,7 +72,7 @@ class SemanticaCliTest {
 		writeRepository();
 
 		assertEquals(0, run(Map.of(), "check", folder.toString()), output());
-		assertTrue(output().contains("ru: 2/6 keys (33%)"), output());
+		assertTrue(output().contains("ru: 2/6 keys (33%)") && !output().contains("und:"), output());
 	}
 
 	@Test
@@ -112,6 +113,7 @@ class SemanticaCliTest {
 
 		assertEquals(Map.of("game.menu.title", "<gold>Меню</gold>"), Bundle.read(Files.readAllBytes(output.resolve("create/ru.json"))));
 		assertTrue(Files.exists(output.resolve("website/ru.json")));
+		assertEquals(Map.of("game.link.menu", "{@game.menu.title}!"), Bundle.read(Files.readAllBytes(output.resolve("bedwars/und.json"))));
 		assertFalse(Files.exists(output.resolve("bedwars/de.json")));
 	}
 

@@ -124,7 +124,7 @@ public final class SemanticaCli {
 
 		Map<String, Integer> byLocale = new TreeMap<>();
 		for (Locale locale : catalog.getLocales()) {
-			if (locale.equals(defaultLocale)) continue;
+			if (locale.equals(defaultLocale) || locale.equals(Locale.ROOT)) continue;
 			int translated = (int) catalog.keys(locale).stream().filter(catalog.keys(defaultLocale)::contains).count();
 			byLocale.put(locale.toLanguageTag(), translated);
 		}

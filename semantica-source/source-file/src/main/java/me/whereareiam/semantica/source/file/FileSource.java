@@ -33,17 +33,28 @@ import java.util.stream.Stream;
  *     game/menu.json
  * </pre>
  *
+ * <p>One folder, {@value #ROOT_FOLDER} unless named otherwise, holds the messages of the root locale
+ * ({@link Locale#ROOT}): messages that are the same in every language, such as one made only of references,
+ * {@code "{@game.prefix} {@game.account.login-failed}"}, which every lookup tries last.</p>
+ *
  * <p>JSON and YAML are read through Configura, {@code .properties} through the JDK. A list of strings is a
  * message of several lines. Files directly in the folder and folders starting with a dot are not read.</p>
  */
 public final class FileSource implements Source {
+	/**
+	 * The name of the folder of the root locale, unless another is given.
+	 */
+	public static final String ROOT_FOLDER = "all";
+
 	private final String name;
 	private final Path folder;
+	private final String rootFolder;
 	private final Function<InputStream, JsonNode> treeReader;
 
-	private FileSource(String name, Path folder, Function<InputStream, JsonNode> treeReader) {
+	private FileSource(String name, Path folder, String rootFolder, Function<InputStream, JsonNode> treeReader) {
 		this.name = name;
 		this.folder = folder;
+		this.rootFolder = rootFolder;
 		this.treeReader = treeReader;
 	}
 
@@ -56,10 +67,24 @@ public final class FileSource implements Source {
 	 * @return the source
 	 */
 	public static @NotNull FileSource of(@NotNull Path folder, @NotNull Configura configura) {
+		return of(folder, configura, ROOT_FOLDER);
+	}
+
+	/**
+	 * Reads translations from a folder on disk and watches it, with the root locale's messages in a folder of
+	 * another name.
+	 *
+	 * @param folder     the folder, such as a plugin's {@code languages} folder
+	 * @param configura  reads the JSON and YAML files
+	 * @param rootFolder the name of the folder of the root locale, such as {@code all}
+	 * @return the source
+	 */
+	public static @NotNull FileSource of(@NotNull Path folder, @NotNull Configura configura, @NotNull String rootFolder) {
 		Objects.requireNonNull(folder, "folder");
 		Objects.requireNonNull(configura, "configura");
+		Objects.requireNonNull(rootFolder, "rootFolder");
 
-		return new FileSource("file:" + folder, folder, configura::readNode);
+		return new FileSource("file:" + folder, folder, rootFolder, configura::readNode);
 	}
 
 	@Override
@@ -91,7 +116,7 @@ public final class FileSource implements Source {
 			String folderName = localeFolder.getFileName().toString();
 			if (!Files.isDirectory(localeFolder) || folderName.startsWith(".")) continue;
 
-			Locale locale = files.locale(folderName);
+			Locale locale = folderName.equals(rootFolder) ? Locale.ROOT : files.locale(folderName);
 			if (locale == null) continue;
 
 			List<Path> paths;

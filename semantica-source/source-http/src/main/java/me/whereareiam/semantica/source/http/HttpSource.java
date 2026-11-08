@@ -31,9 +31,9 @@ import java.util.concurrent.TimeUnit;
  * Translations from the bundles an organisation's translations repository builds, fetched over HTTP.
  *
  * <p>The source reads {@code manifest.json} at its base address and downloads {@code <product>/<locale>.json}
- * for its product and the locales it is given, plus the manifest's default locale and the base language of
- * each locale. A bundle is downloaded again only when its hash in the manifest changed, and its bytes must match
- * that hash. When watched, the source polls the manifest and reports a change when its revision changes.</p>
+ * for its product and the locales it is given, plus the manifest's default locale, the root locale ({@code und})
+ * and the base language of each locale. A bundle is downloaded again only when its hash in the manifest changed,
+ * and its bytes must match that hash. When watched, the source polls the manifest and reports a change when its revision changes.</p>
  *
  * <p>With a cache folder, the source keeps the last bundles on disk and starts from them when the server cannot
  * be reached.</p>
@@ -179,6 +179,7 @@ public final class HttpSource implements Source {
 			wanted.add(Locale.forLanguageTag(locale.getLanguage()));
 		}
 		wanted.add(current.getDefaultLocale());
+		wanted.add(Locale.ROOT);
 		wanted.retainAll(available);
 
 		return wanted;
@@ -302,8 +303,8 @@ public final class HttpSource implements Source {
 		}
 
 		/**
-		 * Downloads only bundles of these locales, their base languages and the default locale. Without locales,
-		 * every bundle of the product is downloaded.
+		 * Downloads only bundles of these locales, their base languages, the default locale and the root locale.
+		 * Without locales, every bundle of the product is downloaded.
 		 *
 		 * @param locales the enabled locales
 		 * @return this builder

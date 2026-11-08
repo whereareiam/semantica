@@ -77,6 +77,19 @@ class FileSourceTest {
 	}
 
 	@Test
+	void readsTheRootLocaleFromItsFolder() throws IOException {
+		write(folder.resolve("all/identica.yml"), "login:\n  failed: \"{@game.prefix} {@game.account.login-failed}\"\n");
+		write(folder.resolve("neutral/identica.yml"), "login:\n  failed: \"named\"\n");
+
+		Source.Content content = FileSource.of(folder, Configura.builder().build()).load();
+		assertEquals("{@game.prefix} {@game.account.login-failed}", content.entries(Locale.ROOT).get("identica.login.failed").text());
+		assertEquals("all/identica.yml", content.entries(Locale.ROOT).get("identica.login.failed").origin());
+
+		Source.Content renamed = FileSource.of(folder, Configura.builder().build(), "neutral").load();
+		assertEquals("named", renamed.entries(Locale.ROOT).get("identica.login.failed").text());
+	}
+
+	@Test
 	void aMissingFolderHasNoTranslations() throws IOException {
 		Source.Content content = FileSource.of(folder.resolve("absent"), Configura.builder().build()).load();
 
