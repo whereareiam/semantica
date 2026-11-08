@@ -12,7 +12,7 @@ lombok = "1.18.42"
 configura = "2.1.0"
 jackson = "2.20.0"
 icu4j = "79.1"
-adventure-v4 = "4.25.0"
+adventure-v4 = "5.2.0"
 adventure-v5 = "5.2.0"
 annotations = "26.0.1"
 
