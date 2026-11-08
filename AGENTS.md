@@ -2,7 +2,7 @@
 
 ## Semantica At A Glance
 
-Semantica is the **translation engine** shared by Yui (Discord bot), Intercept (Velocity plugin) and Oraylen's Arbor. Messages are ICU MessageFormat plus `{@key}` references, written in one translations repository per organisation and edited through Weblate. Semantica merges layers of sources (a server's `languages` folder, an organisation's bundles over HTTP, an add-on's own layer), parses every message once, reports issues instead of failing, swaps an immutable catalog at once, and resolves texts along one locale chain. Text formats render resolved messages: Adventure components through MiniMessage, for Adventure 4 and 5.
+Semantica is the **translation engine** shared by Yui (Discord bot), Intercept (Velocity plugin) and Oraylen's Arbor. Messages are ICU MessageFormat plus `{@key}` references. A product keeps its own texts in its own repository and ships them, for strangers too; an organisation's translations repository, edited through Weblate, holds only that organisation's layer (its own products, and its own versions of other products' texts, named by topic, never by plugin), and its CI builds one bundle per product from the key prefixes `semantica.json` gives each product. Semantica merges layers of sources (a server's `languages` folder, an organisation's bundles over HTTP, an add-on's own layer), parses every message once, reports issues instead of failing, swaps an immutable catalog at once, and resolves texts along one locale chain. Text formats render resolved messages: Adventure components through MiniMessage, for Adventure 4 and 5.
 
 Semantica is platform-agnostic: no players, audiences, interactions, plugin registration or service lookups. The project decides a reader's locale and where a text is shown; Discord (markdown, mentions, slash commands, length limits) belongs to Yui. Each plugin owns its own `Semantica` and registers its own `AdventureTranslator` in `GlobalTranslator`.
 
@@ -22,7 +22,7 @@ When changing behavior:
 ### Module Map
 
 - `semantica-api`
-  Contracts and models: `Text`, `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
+  Contracts and models: `Text`, `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
 - `semantica-common`
   `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`). ICU4J for CLDR plural rules and formats.
 - `semantica-syntax/syntax-icu` (project `:syntax-icu`)
@@ -30,7 +30,7 @@ When changing behavior:
 - `semantica-source/source-file` (project `:source-file`)
   `FileSource.of(Path, Configura)`: the server's `languages` folder, one folder per locale, paths as key prefixes, watching. Plugins write their defaults into that folder themselves (Configura defaults providers); Semantica only reads it.
 - `semantica-source/source-http` (project `:source-http`)
-  `HttpSource`: an organisation's bundles by product, namespaces and locales, polled through `manifest.json`; `Manifest` and `Bundle`, also written by `semantica-cli`.
+  `HttpSource`: an organisation's bundles by product, key prefixes and locales, polled through `manifest.json`; `Manifest` and `Bundle`, also written by `semantica-cli`.
 - `semantica-format/common` (project `:semantica-format:common`, artifact `format-common`)
   `Renderer` and `PlainRenderer`. Depends on the api only.
 - `semantica-format/type/format-adventure/common` (project `:format-adventure-common`)
@@ -42,7 +42,7 @@ When changing behavior:
 - `semantica-testing`
   `MemorySource`, `IssueAssert`, and the conformance cases with `ConformanceTest`.
 - `semantica-cli`
-  `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json`. Published with a jar of all dependencies (classifier `all`).
+  `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json` (`products` and `markup` by key prefix, the longest markup prefix wins). Published with a jar of all dependencies (classifier `all`).
 - `build-logic/`
   `module-java` (group `me.whereareiam.semantica`, Java 21 toolchain, Lombok, JetBrains annotations, JUnit, sources and Javadoc jars), `module-api` (`module-java` plus publication, for `semantica-api`), `packaging-publication` (Maven publication through the toolkit).
 - `docs/content/`

@@ -34,7 +34,7 @@ import me.whereareiam.semantica.source.http.HttpSource;
 
 HttpSource bundles = HttpSource.builder(URI.create("https://translations.oraylen.com/bundles/"))
         .product("intercept")
-        .namespaces("game", "common")
+        .prefixes("game", "realm.vanilla")
         .locales(Set.of(Locale.ENGLISH, Locale.forLanguageTag("ru"), Locale.forLanguageTag("de")))
         .interval(Duration.ofMinutes(5))
         .cache(dataFolder.resolve("cache/translations"))

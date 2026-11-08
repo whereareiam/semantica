@@ -3,7 +3,7 @@ title: Translations repository
 description: Check an organisation's translations in CI and build the bundles its products download.
 ---
 
-An organisation keeps its translations in one repository, laid out as in [Bundles](../../format/bundles/index.md), and edited through Weblate. Its CI runs `semantica-cli`, which loads the translations as Semantica does, with the checks of each namespace's format, and writes the bundles.
+An organisation keeps its own layer of translations in one repository: its own products' texts, and its own versions of other products' texts, named by topic. It is laid out as in [Bundles](../../format/bundles/index.md) and edited through Weblate; the products themselves ship their own texts. The repository's CI runs `semantica-cli`, which loads the translations as Semantica does, with the markup checks `semantica.json` names, and writes one bundle per product and locale.
 
 ## The command
 
@@ -28,8 +28,8 @@ The folder defaults to the current folder and the output to `bundles`. The outpu
 
 Everything the engine reports while loading (see [Issues](../../format/issues/index.md)), plus:
 
-- for namespaces with the format `adventure`: MiniMessage tags outside the defaults and the namespace's `allow`, judged by Adventure 5's tags, and tags that differ from the default locale;
-- keys of namespaces `semantica.json` does not list, and a default locale without a folder.
+- for keys below a `markup` prefix with the format `adventure`: MiniMessage tags outside the defaults and that prefix's `allow`, judged by Adventure 5's tags, and tags that differ from the default locale;
+- keys no product names a prefix of, since no bundle would carry them, and a default locale without a folder.
 
 Errors fail the check; warnings are printed. On GitHub Actions each issue is also an annotation on its file.
 

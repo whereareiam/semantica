@@ -1,9 +1,14 @@
 ---
 title: Bundles
-description: The translations repository of an organisation, its semantica.json, and the bundles and manifest its CI builds.
+description: An organisation's translations repository, its semantica.json, and the bundles and manifest its CI builds.
 ---
 
-Each organisation keeps its translations in one repository, edited through Weblate. Its CI checks every change and builds bundles: one file per product and locale with only the namespaces that product uses. A product downloads the bundles of the locales it enables and polls a small manifest to learn when they change.
+Translations live in two kinds of places:
+
+- **A product's own repository.** A plugin, mod or bot keeps its own texts beside its code and ships them, so anyone who runs it, inside the organisation or not, gets them.
+- **An organisation's translations repository.** It holds only the organisation's own layer: the texts of its own products, and its own versions of other products' texts. Texts in it are named by topic, such as `game.chat` or `realm.vanilla.common`, never by plugin. It is edited through Weblate.
+
+The organisation's CI checks every change and builds bundles: one file per product and locale, with only the keys that product uses. A product downloads the bundles of the locales it enables and polls a small manifest to learn when they change.
 
 ## The repository
 
@@ -11,26 +16,27 @@ Each organisation keeps its translations in one repository, edited through Webla
 translations/
   semantica.json
   en/
-    game/menu.json
-    discord/ticket.json
-    common/unit.json
+    website/ dashboard/ launcher/ email/
+    game/<topic>/                       shared by every realm: account, chat, economy
+    realm/<realm>/common/...            one realm: create, vanilla
+    realm/<realm>/mode/<mode>/...       a mode inside its realm: bedwars, skywars
   ru/
     ...
 ```
 
-The locale folders follow [Files](../files/index.md). `semantica.json` at the root describes the repository:
+The locale folders follow [Files](../files/index.md): a file's path is the prefix of its keys. `semantica.json` at the root describes the repository:
 
 ```json
 {
   "defaultLocale": "en",
-  "namespaces": {
-    "game":    { "format": "adventure", "allow": ["hover"] },
-    "discord": {},
-    "common":  {}
+  "markup": {
+    "game":  { "format": "adventure" },
+    "realm": { "format": "adventure", "allow": ["hover"] }
   },
   "products": {
-    "intercept": ["game", "common"],
-    "yui":       ["discord", "common"]
+    "create":  ["game", "realm.create.common"],
+    "bedwars": ["game", "realm.vanilla.common", "realm.vanilla.mode.bedwars"],
+    "website": ["website"]
   }
 }
 ```
@@ -38,10 +44,12 @@ The locale folders follow [Files](../files/index.md). `semantica.json` at the ro
 | Field | Meaning |
 | --- | --- |
 | `defaultLocale` | The locale every key exists in. |
-| `namespaces` | Every namespace, the first segment of a key, that the repository holds. A key of a namespace not listed here is a `source` issue. |
-| `namespaces.<name>.format` | The text format of its messages, and so which markup is checked: `adventure` (MiniMessage). Without it, the markup is not checked. |
-| `namespaces.<name>.allow` | For `adventure`: MiniMessage tag groups allowed beyond the defaults, such as `hover`, `click`, `insertion`. |
-| `products` | Each product and the namespaces it receives. |
+| `products` | Each product and the key prefixes its bundles carry. A prefix takes whole segments: `realm.vanilla.common` takes `realm.vanilla.common.join.title`, not `realm.vanilla.commons`. A key no product names a prefix of is a `source` issue, since no bundle would carry it. |
+| `markup` | The text format of the keys below a prefix, and so which markup is checked. Where several prefixes match a key, the longest wins. Keys below no prefix are not checked for markup. |
+| `markup.<prefix>.format` | `adventure` (MiniMessage). |
+| `markup.<prefix>.allow` | MiniMessage tag groups allowed beyond the defaults, such as `hover`, `click`, `insertion`. |
+
+Markup and products are separate because they answer separate questions: how a text is written depends on where it is shown, while which bundle carries it depends on who uses it. A key of `game` is MiniMessage in every product that carries it.
 
 ## Bundles
 
@@ -50,18 +58,20 @@ The CI writes, into a folder it publishes:
 ```text
 bundles/
   manifest.json
-  intercept/en.json
-  intercept/ru.json
-  yui/en.json
+  bedwars/en.json
+  bedwars/ru.json
+  create/en.json
+  website/en.json
   ...
 ```
 
-A bundle, `<product>/<locale>.json`, is one flat JSON object of the keys of the product's namespaces that the locale has, sorted by key, with the messages as written:
+A bundle, `<product>/<locale>.json`, is one flat JSON object of the keys below the product's prefixes that the locale has, sorted by key, with the messages as written:
 
 ```json
 {
-  "common.unit": "{count, plural, one {# unit} other {# units}}",
-  "game.menu.title": "<gold>Menu</gold>"
+  "game.menu.title": "<gold>Menu</gold>",
+  "realm.vanilla.common.join.title": "Welcome to Vanilla",
+  "realm.vanilla.mode.bedwars.bed.lost": "<red>Your bed is gone!</red>"
 }
 ```
 
@@ -77,8 +87,8 @@ A bundle holds only the messages of its own locale; falling back happens in the 
   "revision": "4f2c1a9",
   "defaultLocale": "en",
   "bundles": {
-    "intercept": { "en": "9f86d081884c7d65...", "ru": "2c26b46b68ffc68f..." },
-    "yui": { "en": "fcde2b2edba56bf4..." }
+    "bedwars": { "en": "9f86d081884c7d65...", "ru": "2c26b46b68ffc68f..." },
+    "website": { "en": "fcde2b2edba56bf4..." }
   }
 }
 ```
@@ -92,7 +102,7 @@ A bundle holds only the messages of its own locale; falling back happens in the 
 
 ## Reading bundles
 
-A product is configured with the address of the bundles, its product name, the locales it enables and optionally the namespaces it keeps. It:
+A product is configured with the address of the bundles, its product name, the locales it enables and optionally the key prefixes it keeps. It:
 
 1. reads `manifest.json`;
 2. wants the bundles of its enabled locales, of each one's base language (`pt` for `pt-BR`) and of the default locale, where the manifest has them;

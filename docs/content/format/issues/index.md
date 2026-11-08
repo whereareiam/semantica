@@ -11,7 +11,7 @@ A translations repository's CI fails on errors and prints warnings.
 
 | Kind | Severity | Found when | The message |
 | --- | --- | --- | --- |
-| `source` | error | A file or bundle cannot be read, a folder is no locale, a key is written twice, a namespace is not listed in `semantica.json`. | Not read, or the other copy is used. |
+| `source` | error | A file or bundle cannot be read, a folder is no locale, a key is written twice, no product in `semantica.json` names a prefix of a key. | Not read, or the other copy is used. |
 | `syntax` | error | The message is no valid [syntax](../syntax/index.md). | Left out; a layer below with a valid message for the key is used instead. |
 | `missing-reference` | error | A reference names a key no locale of the chain has. | Left out. |
 | `reference-cycle` | error | References lead back into a cycle. | Left out. |

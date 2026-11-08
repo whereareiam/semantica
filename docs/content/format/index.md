@@ -3,7 +3,7 @@ title: Overview
 description: The translation format shared by Semantica, the web's feature-i18n and every translations repository.
 ---
 
-Every product of an organisation, the game, the Discord bot, the website and the launcher, reads its texts in one format. Translators edit them in one place, a translations repository per organisation, through Weblate. This section specifies that format, so that every implementation reads a message the same way: Semantica in Java, and `feature-i18n` in TypeScript.
+Every product, the game's plugins, the Discord bot, the website and the launcher, reads its texts in one format. A product ships its own texts; an organisation's translations repository, edited through Weblate, holds that organisation's own layer on top. This section specifies that format, so that every implementation reads a message the same way: Semantica in Java, and `feature-i18n` in TypeScript.
 
 The format covers:
 
@@ -40,7 +40,7 @@ Values given by the program are never read as markup or as part of the message: 
 | Term | Meaning |
 | --- | --- |
 | key | The name of a message, segments separated by dots: `game.menu.title`. |
-| namespace | The first segment of a key: `game`. A repository lists its namespaces and which products receive them. |
+| key prefix | The start of keys, whole segments only: `realm.vanilla.common`. A translations repository names its products' keys and its markup by prefixes. |
 | locale | A language tag in BCP 47 form: `en`, `pt-BR`, `zh-Hant-TW`. |
 | default locale | The locale every key exists in, and the last one tried. Usually `en`. |
 | argument | A named value a message inserts or chooses by: `{name}`. |
