@@ -81,17 +81,18 @@ class HttpSourceTest {
 	@Test
 	void readsTheProductsBundlesForTheEnabledLocales() throws IOException {
 		publish("1", Map.of(
-				EN, Map.of("game.menu.title", "Menu", "discord.ticket.title", "Ticket"),
+				EN, Map.of("game.menu.title", "Menu", "gamemode.title", "Mode", "discord.ticket.title", "Ticket"),
 				RU, Map.of("game.menu.title", "Меню"),
 				DE, Map.of("game.menu.title", "Menü")
 		));
 
-		Source.Content content = source().namespaces("game").locales(Set.of(Locale.forLanguageTag("ru-RU"))).build().load();
+		Source.Content content = source().prefixes("game").locales(Set.of(Locale.forLanguageTag("ru-RU"))).build().load();
 
 		IssueAssert.assertNone(content.getIssues());
 		assertEquals(Set.of(EN, RU), content.getLocales());
 		assertEquals("Меню", content.entries(RU).get("game.menu.title").text());
 		assertFalse(content.entries(EN).containsKey("discord.ticket.title"));
+		assertFalse(content.entries(EN).containsKey("gamemode.title"));
 		assertFalse(requests.contains("intercept/de.json"));
 	}
 
