@@ -1,0 +1,67 @@
+{
+  "name": "Semantica",
+  "description": "One translation format and engine for the plugins, mods and bots of an organisation.",
+  "state": {
+    "bundling": {
+      "captions": [
+        "Counting Russian plurals on all four hands.",
+        "Following references until they lead home.",
+        "Escaping a player called @everyone.",
+        "Asking CLDR how many forms a word has.",
+        "Polling the manifest, politely."
+      ]
+    }
+  },
+  "urls": {
+    "github": "https://github.com/whereareiam/semantica"
+  },
+  "links": [
+    {
+      "type": "icon",
+      "label": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/whereareiam/semantica",
+      "external": true
+    },
+    {
+      "type": "icon",
+      "label": "Discord",
+      "icon": "discord",
+      "url": "https://discord.arcadeya.com",
+      "external": true
+    }
+  ],
+  "i18n": {
+    "default": "en",
+    "languages": {
+      "en": {
+        "label": "English"
+      }
+    }
+  },
+  "versions": {
+    "home": "dev",
+    "include": [
+      {
+        "type": "branch",
+        "pattern": "release/*"
+      },
+      {
+        "type": "tag",
+        "pattern": "*"
+      }
+    ],
+    "meta": {
+      "dev": {
+        "label": "Development",
+        "theme": {
+          "primary": "hsl(28 100% 56%)",
+          "primaryForeground": "hsl(0 0% 7%)",
+          "ring": "hsl(28 100% 56%)",
+          "accent": "hsla(28 100% 56% / 0.14)",
+          "accentForeground": "hsl(28 100% 86%)"
+        }
+      }
+    }
+  }
+}
