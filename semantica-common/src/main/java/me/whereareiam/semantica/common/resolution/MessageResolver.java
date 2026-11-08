@@ -29,6 +29,10 @@ import java.util.function.Consumer;
  *
  * <p>A message that goes deeper than the depth limit or grows past the size limit is given up on in that
  * locale, reported, and the next locale of the chain is tried; when none is left, the key is shown.</p>
+ *
+ * <p>A message of the root locale is the same in every language: its references and nested texts follow the
+ * chain of the locale asked for, as every message's do, and its numbers, dates and plural forms follow the
+ * locale asked for first.</p>
  */
 public final class MessageResolver {
 	private final ValueFormatter formatter;
@@ -152,7 +156,7 @@ public final class MessageResolver {
 
 			String formatted;
 			try {
-				formatted = formatter.format(value, argument.format(), argument.style(), entry.locale());
+				formatted = formatter.format(value, argument.format(), argument.style(), formatLocale(entry));
 			} catch (RuntimeException exception) {
 				report(Issue.Kind.INVALID_VALUE, entry, "Cannot format '" + argument.name() + "': " + exception.getMessage());
 				formatted = String.valueOf(value);
@@ -189,7 +193,7 @@ public final class MessageResolver {
 			ParsedMessage branch = plural.branches().get("=" + exact(number));
 			Number count = minus(number, plural.offset());
 			if (branch == null) {
-				String form = formatter.pluralForm(entry.locale(), count.doubleValue(), plural.ordinal());
+				String form = formatter.pluralForm(formatLocale(entry), count.doubleValue(), plural.ordinal());
 				branch = plural.branches().getOrDefault(form, plural.branches().get("other"));
 			}
 
@@ -227,6 +231,14 @@ public final class MessageResolver {
 
 			report(Issue.Kind.MISSING_REFERENCE, entry, "No locale of " + chain + " has '" + reference.key() + "'");
 			append("{@" + reference.key() + "}");
+		}
+
+		/**
+		 * Returns the locale a message's numbers, dates and plural forms follow: its own, or for a message of the
+		 * root locale, which is the same in every language, the locale asked for first.
+		 */
+		private Locale formatLocale(Catalog.Entry entry) {
+			return entry.locale().equals(Locale.ROOT) ? chain.getFirst() : entry.locale();
 		}
 
 		private void report(Issue.Kind kind, Catalog.Entry entry, String detail) {

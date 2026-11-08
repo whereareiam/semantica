@@ -63,7 +63,7 @@ public final class MarkupCheck implements Check {
 					issues.add(issue(entry, detail));
 				}
 
-				if (locale.equals(defaultLocale)) continue;
+				if (locale.equals(defaultLocale) || locale.equals(Locale.ROOT)) continue;
 				Optional<Catalog.Entry> original = catalog.entry(defaultLocale, entry.key());
 				if (original.isEmpty()) continue;
 

@@ -1,0 +1,30 @@
+{
+  "description": "The root locale, written und: messages that are the same in every language, tried after the default locale. Their references follow the requested chain, and their numbers and plural forms follow the requested locale.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "game.prefix": "[Game]",
+      "game.login.failed": "Login failed",
+      "identica.welcome": "Welcome, {name}"
+    },
+    "ru": {
+      "game.prefix": "[Игра]",
+      "game.login.failed": "Вход не удался"
+    },
+    "und": {
+      "identica.login.failed": "{@game.prefix} {@game.login.failed}",
+      "identica.welcome": "{@game.prefix} {name}",
+      "shop.stock": "{count, plural, one {# item} few {# items (few)} other {# items}}"
+    }
+  },
+  "cases": [
+    { "key": "identica.login.failed", "locale": "ru", "expected": "[Игра] Вход не удался", "resolvedLocale": "und" },
+    { "key": "identica.login.failed", "locale": "en", "expected": "[Game] Login failed", "resolvedLocale": "und" },
+    { "key": "identica.login.failed", "locale": "de", "expected": "[Game] Login failed", "resolvedLocale": "und" },
+    { "key": "identica.welcome", "locale": "ru", "values": { "name": "Ann" }, "expected": "Welcome, Ann", "resolvedLocale": "en" },
+    { "key": "shop.stock", "locale": "ru", "values": { "count": 3 }, "expected": "3 items (few)" },
+    { "key": "shop.stock", "locale": "en", "values": { "count": 3 }, "expected": "3 items" },
+    { "key": "shop.stock", "locale": "ru", "values": { "count": 1.5 }, "expected": "1,5 items" }
+  ],
+  "issues": []
+}

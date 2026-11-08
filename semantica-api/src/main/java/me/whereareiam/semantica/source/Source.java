@@ -130,9 +130,10 @@ public interface Source {
 			private final List<Issue> issues = new ArrayList<>();
 
 			/**
-			 * Adds a message.
+			 * Adds a message. A message that is the same in every language, such as one made only of references,
+			 * belongs to {@link Locale#ROOT}, which every lookup tries last.
 			 *
-			 * @param locale its locale
+			 * @param locale its locale, or {@link Locale#ROOT}
 			 * @param key    its key
 			 * @param text   its source
 			 * @param origin where it was written, or {@code null}
