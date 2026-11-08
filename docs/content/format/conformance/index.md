@@ -32,7 +32,7 @@ The cases in `semantica-testing/src/main/resources/conformance/` describe the fo
 | `defaultLocale` | The default locale. |
 | `fallbacks` | Optional configured fallbacks, by locale. |
 | `limits` | Optional limits: `maxDepth`, `maxLength`. Otherwise the [defaults](../limits/index.md). |
-| `messages` | The messages, by locale tag and key, as one source. |
+| `messages` | The messages, by locale tag and key, as one source; `und` is the root locale. |
 | `issues` | Exactly the issues found while loading, by kind, locale and key. |
 | `cases[].key`, `cases[].locale` | The text asked for, in one requested locale. |
 | `cases[].values` | Values: a JSON number (integral numbers are integers, others decimals), string or boolean, or `{"text": {"key": ..., "values": {...}}}` for a nested text. |

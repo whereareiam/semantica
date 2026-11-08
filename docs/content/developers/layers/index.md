@@ -23,6 +23,8 @@ FileSource languages = FileSource.of(dataFolder.resolve("languages"), configura)
 
 Saving files reloads the layer once things have been quiet for a moment. A folder that does not exist has no translations and is read once it is created.
 
+The folder `all` holds messages that are the same in every language, the root locale, such as one an administrator writes to link a plugin's key to the organisation's texts: `identica.login.failed: "{@game.prefix} {@game.account.login-failed}"`. Name it otherwise with `FileSource.of(folder, configura, "neutral")`. A source of your own puts such messages under `Locale.ROOT`.
+
 The folder holds the plugin's own texts: the plugin writes its English defaults into `languages/en/`, such as through Configura's defaults providers, and administrators change them there or add other languages. Semantica only reads the folder.
 
 ## An organisation's bundles

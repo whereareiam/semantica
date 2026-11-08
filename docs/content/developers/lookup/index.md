@@ -34,7 +34,7 @@ ResolvedMessage chosen = semantica.resolve(text, List.of(chosenLocale, clientLoc
 String line = message.plain();
 ```
 
-The locales are tried along the chain of [Fallback](../../format/fallback/index.md): each requested locale, its configured fallbacks, its base language, then the default locale. Configure fallbacks on the builder:
+The locales are tried along the chain of [Fallback](../../format/fallback/index.md): each requested locale, its configured fallbacks, its base language, then the default locale and last the root locale, whose messages are the same in every language. Configure fallbacks on the builder:
 
 ```java
 Semantica.builder()
