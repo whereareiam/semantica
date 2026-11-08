@@ -16,8 +16,8 @@ class LocaleChainTest {
 	void endsWithTheBaseLanguageAndTheDefault() {
 		LocaleChain chain = LocaleChain.builder(Locale.ENGLISH).build();
 
-		assertEquals(List.of(tag("de-AT"), tag("de"), tag("en")), chain.resolve(tag("de-AT")));
-		assertEquals(List.of(tag("en-US"), tag("en")), chain.resolve(tag("en-US")));
+		assertEquals(List.of(tag("de-AT"), tag("de"), tag("en"), Locale.ROOT), chain.resolve(tag("de-AT")));
+		assertEquals(List.of(tag("en-US"), tag("en"), Locale.ROOT), chain.resolve(tag("en-US")));
 	}
 
 	@Test
@@ -26,21 +26,29 @@ class LocaleChainTest {
 				.fallback(tag("pt-BR"), tag("pt-PT"))
 				.build();
 
-		assertEquals(List.of(tag("pt-BR"), tag("pt-PT"), tag("pt"), tag("en")), chain.resolve(tag("pt-BR")));
+		assertEquals(List.of(tag("pt-BR"), tag("pt-PT"), tag("pt"), tag("en"), Locale.ROOT), chain.resolve(tag("pt-BR")));
 	}
 
 	@Test
 	void chainsSeveralRequestedLocalesInOrder() {
 		LocaleChain chain = LocaleChain.builder(Locale.ENGLISH).build();
 
-		assertEquals(List.of(tag("uk"), tag("ru-RU"), tag("ru"), tag("en")), chain.resolve(List.of(tag("uk"), tag("ru-RU"))));
+		assertEquals(List.of(tag("uk"), tag("ru-RU"), tag("ru"), tag("en"), Locale.ROOT), chain.resolve(List.of(tag("uk"), tag("ru-RU"))));
 	}
 
 	@Test
 	void removesScriptAfterRegion() {
 		LocaleChain chain = LocaleChain.builder(Locale.ENGLISH).build();
 
-		assertEquals(List.of(tag("sr-Latn-RS"), tag("sr-Latn"), tag("sr"), tag("en")), chain.resolve(tag("sr-Latn-RS")));
+		assertEquals(List.of(tag("sr-Latn-RS"), tag("sr-Latn"), tag("sr"), tag("en"), Locale.ROOT), chain.resolve(tag("sr-Latn-RS")));
+	}
+
+	@Test
+	void endsWithTheRootLocaleOnce() {
+		LocaleChain chain = LocaleChain.builder(Locale.ENGLISH).build();
+
+		assertEquals(List.of(tag("en"), Locale.ROOT), chain.resolve(Locale.ROOT));
+		assertEquals(List.of(tag("en"), Locale.ROOT), chain.resolve(List.of()));
 	}
 
 	@Test
@@ -50,6 +58,6 @@ class LocaleChainTest {
 				.fallback(tag("nn"), tag("nb"))
 				.build();
 
-		assertEquals(List.of(tag("nb"), tag("nn"), tag("en")), chain.resolve(tag("nb")));
+		assertEquals(List.of(tag("nb"), tag("nn"), tag("en"), Locale.ROOT), chain.resolve(tag("nb")));
 	}
 }

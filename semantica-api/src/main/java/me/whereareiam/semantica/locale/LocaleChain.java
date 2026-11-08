@@ -19,16 +19,17 @@ import java.util.Set;
  *
  * <p>For a requested locale the chain is: the locale itself, its configured fallbacks (each followed by
  * theirs), then the locale with its country, script and variant removed one by one, down to its base
- * language, and finally the default locale. Several requested locales, such as a user's preferred locale
- * before the locale of their client, are chained in order before the default.</p>
+ * language, then the default locale, and last the root locale ({@link Locale#ROOT}), which holds messages that
+ * are the same in every language. Several requested locales, such as a user's preferred locale before the
+ * locale of their client, are chained in order before the default.</p>
  *
  * <pre>{@code
  * LocaleChain chain = LocaleChain.builder(Locale.ENGLISH)
  *         .fallback(Locale.forLanguageTag("pt-BR"), Locale.forLanguageTag("pt-PT"))
  *         .build();
  *
- * chain.resolve(Locale.forLanguageTag("pt-BR")); // [pt-BR, pt-PT, pt, en]
- * chain.resolve(Locale.forLanguageTag("en-US")); // [en-US, en]
+ * chain.resolve(Locale.forLanguageTag("pt-BR")); // [pt-BR, pt-PT, pt, en, root]
+ * chain.resolve(Locale.forLanguageTag("en-US")); // [en-US, en, root]
  * }</pre>
  */
 @Getter
@@ -56,7 +57,7 @@ public final class LocaleChain {
 	 * Returns the locales to try for one requested locale.
 	 *
 	 * @param requested the locale asked for
-	 * @return the locales, without repetitions, ending with the default locale
+	 * @return the locales, without repetitions, ending with the default locale and the root locale
 	 */
 	public @NotNull List<Locale> resolve(@NotNull Locale requested) {
 		return resolve(List.of(requested));
@@ -66,12 +67,13 @@ public final class LocaleChain {
 	 * Returns the locales to try for several requested locales, in the order given.
 	 *
 	 * @param requested the locales asked for, the most wanted first
-	 * @return the locales, without repetitions, ending with the default locale
+	 * @return the locales, without repetitions, ending with the default locale and the root locale
 	 */
 	public @NotNull List<Locale> resolve(@NotNull List<Locale> requested) {
 		Set<Locale> chain = new LinkedHashSet<>();
 		for (Locale locale : requested) expand(Objects.requireNonNull(locale, "locale"), chain);
 		expand(defaultLocale, chain);
+		chain.add(Locale.ROOT);
 
 		return List.copyOf(chain);
 	}

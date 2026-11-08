@@ -12,7 +12,8 @@ import java.util.Set;
 
 /**
  * Reports keys that a translation has but the default locale does not: usually a key that was renamed or
- * removed in the default locale and left behind in the translation.
+ * removed in the default locale and left behind in the translation. Messages of the root locale are no
+ * translation and may have keys of their own.
  */
 public final class UnknownKeyCheck implements Check {
 	@Override
@@ -22,7 +23,7 @@ public final class UnknownKeyCheck implements Check {
 
 		List<Issue> issues = new ArrayList<>();
 		for (Locale locale : catalog.getLocales()) {
-			if (locale.equals(defaultLocale)) continue;
+			if (locale.equals(defaultLocale) || locale.equals(Locale.ROOT)) continue;
 
 			for (Catalog.Entry entry : catalog.entries(locale).values()) {
 				if (known.contains(entry.key())) continue;

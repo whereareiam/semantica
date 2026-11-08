@@ -122,13 +122,14 @@ public final class Semantica implements AutoCloseable {
 	}
 
 	/**
-	 * Tells whether the default locale has a key.
+	 * Tells whether the default locale or the root locale has a key, the two every lookup ends with.
 	 *
 	 * @param key the key
 	 * @return whether a message exists for it
 	 */
 	public boolean has(@NotNull String key) {
-		return catalog.entry(chain.getDefaultLocale(), key).isPresent();
+		Catalog current = catalog;
+		return current.entry(chain.getDefaultLocale(), key).isPresent() || current.entry(Locale.ROOT, key).isPresent();
 	}
 
 	/**

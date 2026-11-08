@@ -25,7 +25,7 @@ public final class ArgumentCheck implements Check {
 
 		List<Issue> issues = new ArrayList<>();
 		for (Locale locale : catalog.getLocales()) {
-			if (locale.equals(defaultLocale)) continue;
+			if (locale.equals(defaultLocale) || locale.equals(Locale.ROOT)) continue;
 
 			for (Catalog.Entry entry : catalog.entries(locale).values()) {
 				Optional<Catalog.Entry> original = catalog.entry(defaultLocale, entry.key());
