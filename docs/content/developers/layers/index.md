@@ -25,6 +25,18 @@ Saving files reloads the layer once things have been quiet for a moment. A folde
 
 The folder `all` holds messages that are the same in every language, the root locale, such as one an administrator writes to link a plugin's key to the organisation's texts: `identica.login.failed: "{@game.prefix} {@game.account.login-failed}"`. Name it otherwise with `FileSource.of(folder, configura, "neutral")`. A source of your own puts such messages under `Locale.ROOT`.
 
+A folder that holds other things beside the locale folders, such as rule files or another layer's folder, names those folders to skip; they are neither read, nor reported as "no locale", nor watched:
+
+```java
+FileSource shared = FileSource.builder(dataFolder.resolve("translations"), configura)
+        .skip("rules", "local")
+        .build();
+FileSource local = FileSource.builder(dataFolder.resolve("translations/local"), configura)
+        .skip("rules")
+        .rootFolder("all")
+        .build();
+```
+
 The folder holds the plugin's own texts: the plugin writes its English defaults into `languages/en/`, such as through Configura's defaults providers, and administrators change them there or add other languages. Semantica only reads the folder.
 
 ## An organisation's bundles
