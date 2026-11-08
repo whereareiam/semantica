@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in Semantica does not work as documented.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask on [Discord](https://discord.arcadeya.com) for help with using Semantica in a project. Report vulnerabilities privately through the [security policy](https://github.com/whereareiam/semantica/security/policy).
+
+  - type: input
+    id: version
+    attributes:
+      label: Semantica version
+      description: The version of the `me.whereareiam.semantica` artifacts, for example `0.1.0` or `dev-1a2b3c4`.
+    validations:
+      required: true
+
+  - type: input
+    id: consumer
+    attributes:
+      label: Project and version
+      description: The plugin, mod, bot or translations repository that uses Semantica.
+      placeholder: Intercept 2.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: Where it happens
+      options:
+        - Adventure 5 (format-adventure-v5)
+        - Adventure 4 (format-adventure-v4)
+        - semantica-cli
+        - No format (the engine or a source alone)
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Put `{count, plural, one {# item} other {# items}}` into `languages/ru/shop.json`
+        2. Resolve `Text.of("shop.items").with("count", 3)` for `ru`
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: translations
+    attributes:
+      label: Translations
+      description: The messages involved, as written in their files.
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The issues Semantica reported and any stack traces.
+      render: text
