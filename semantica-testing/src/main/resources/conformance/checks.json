@@ -1,0 +1,29 @@
+{
+  "description": "Issues found by comparing translations with the default locale: unknown keys, different arguments, missing plural forms.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "greeting": "Hello, {name}!",
+      "items": "{count, plural, one {# item} other {# items}}",
+      "lives": "{count, plural, one {One life left, {name}} other {# lives left, {name}}}"
+    },
+    "de": {
+      "greeting": "Hallo, {player}!",
+      "removed": "Weg",
+      "lives": "{count, plural, one {Ein Leben übrig} other {# Leben übrig, {name}}}"
+    },
+    "ru": {
+      "greeting": "Привет!",
+      "items": "{count, plural, one {# предмет} other {# предмета}}"
+    }
+  },
+  "cases": [
+    { "key": "items", "locale": "ru", "values": { "count": 5 }, "expected": "5 предмета" }
+  ],
+  "issues": [
+    { "kind": "argument-mismatch", "locale": "de", "key": "greeting" },
+    { "kind": "argument-mismatch", "locale": "ru", "key": "greeting" },
+    { "kind": "unknown-key", "locale": "de", "key": "removed" },
+    { "kind": "missing-plural-form", "locale": "ru", "key": "items" }
+  ]
+}

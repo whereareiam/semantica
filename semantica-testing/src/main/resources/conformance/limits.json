@@ -1,0 +1,20 @@
+{
+  "description": "A resolved message that grows past the size limit is given up on; the lookup falls back to the next locale, and shows the key when none is left.",
+  "defaultLocale": "en",
+  "limits": { "maxLength": 20 },
+  "messages": {
+    "en": {
+      "short": "{name}",
+      "echo": "Said: {text}"
+    },
+    "de": {
+      "short": "Name: {name}, {name}, {name}"
+    }
+  },
+  "cases": [
+    { "key": "short", "locale": "en", "values": { "name": "Ann" }, "expected": "Ann" },
+    { "key": "short", "locale": "de", "values": { "name": "Annabelle" }, "expected": "Annabelle", "resolvedLocale": "en", "issues": [ { "kind": "size-limit", "key": "short" } ] },
+    { "key": "echo", "locale": "en", "values": { "text": "far too long for the limit" }, "expected": "echo", "issues": [ { "kind": "size-limit", "key": "echo" } ] }
+  ],
+  "issues": []
+}

@@ -1,0 +1,46 @@
+{
+  "description": "Literals, arguments, quoting and messages that are no valid syntax.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "plain": "Hello, world!",
+      "argument": "Hello, {name}!",
+      "spaced": "Hello, { name }!",
+      "positional": "{0} gave {1} to you",
+      "apostrophe": "It's {name}'s turn",
+      "doubled": "It''s fine",
+      "quoted-brace": "Use '{name}' to insert a name",
+      "quoted-hash": "{count, plural, one {'#'{count} is the only one} other {'#'{count} is # in the list}}",
+      "markup": "<red>Hello</red>, <b>{name}</b>",
+      "unclosed": "Hello, {name",
+      "stray-close": "Hello }",
+      "unknown-type": "{when, duration}",
+      "no-other": "{count, plural, one {# item}}",
+      "unknown-form": "{count, plural, single {# item} other {# items}}",
+      "twice": "{count, plural, one {a} one {b} other {c}}",
+      "empty-name": "Hello, {}"
+    }
+  },
+  "cases": [
+    { "key": "plain", "locale": "en", "expected": "Hello, world!" },
+    { "key": "argument", "locale": "en", "values": { "name": "Ann" }, "expected": "Hello, Ann!" },
+    { "key": "spaced", "locale": "en", "values": { "name": "Ann" }, "expected": "Hello, Ann!" },
+    { "key": "positional", "locale": "en", "values": { "0": "Ann", "1": "a sword" }, "expected": "Ann gave a sword to you" },
+    { "key": "apostrophe", "locale": "en", "values": { "name": "Ann" }, "expected": "It's Ann's turn" },
+    { "key": "doubled", "locale": "en", "expected": "It's fine" },
+    { "key": "quoted-brace", "locale": "en", "values": { "name": "Ann" }, "expected": "Use {name} to insert a name" },
+    { "key": "quoted-hash", "locale": "en", "values": { "count": 3 }, "expected": "#3 is 3 in the list" },
+    { "key": "markup", "locale": "en", "values": { "name": "<i>Ann</i>" }, "expected": "<red>Hello</red>, <b><i>Ann</i></b>" },
+    { "key": "argument", "locale": "en", "expected": "Hello, {name}!", "issues": [ { "kind": "missing-value", "key": "argument" } ] },
+    { "key": "unclosed", "locale": "en", "expected": "unclosed", "issues": [ { "kind": "missing-key", "key": "unclosed" } ] }
+  ],
+  "issues": [
+    { "kind": "syntax", "locale": "en", "key": "unclosed" },
+    { "kind": "syntax", "locale": "en", "key": "stray-close" },
+    { "kind": "syntax", "locale": "en", "key": "unknown-type" },
+    { "kind": "syntax", "locale": "en", "key": "no-other" },
+    { "kind": "syntax", "locale": "en", "key": "unknown-form" },
+    { "kind": "syntax", "locale": "en", "key": "twice" },
+    { "kind": "syntax", "locale": "en", "key": "empty-name" }
+  ]
+}

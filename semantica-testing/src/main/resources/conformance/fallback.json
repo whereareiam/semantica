@@ -1,0 +1,36 @@
+{
+  "description": "The locale chain: the requested locale, its configured fallbacks, its base language, then the default locale.",
+  "defaultLocale": "en",
+  "fallbacks": { "pt-BR": ["pt-PT"] },
+  "messages": {
+    "en": {
+      "hello": "Hello",
+      "bye": "Goodbye",
+      "only-english": "English only",
+      "color": "Color"
+    },
+    "en-GB": {
+      "color": "Colour"
+    },
+    "pt-PT": {
+      "hello": "Olá",
+      "bye": "Adeus"
+    },
+    "pt-BR": {
+      "hello": "Oi"
+    },
+    "de": {
+      "hello": "Hallo"
+    }
+  },
+  "cases": [
+    { "key": "color", "locale": "en-GB", "expected": "Colour", "resolvedLocale": "en-GB" },
+    { "key": "color", "locale": "en-US", "expected": "Color", "resolvedLocale": "en" },
+    { "key": "hello", "locale": "pt-BR", "expected": "Oi", "resolvedLocale": "pt-BR" },
+    { "key": "bye", "locale": "pt-BR", "expected": "Adeus", "resolvedLocale": "pt-PT" },
+    { "key": "hello", "locale": "de-AT", "expected": "Hallo", "resolvedLocale": "de" },
+    { "key": "only-english", "locale": "de", "expected": "English only", "resolvedLocale": "en" },
+    { "key": "nowhere", "locale": "de", "expected": "nowhere", "issues": [ { "kind": "missing-key", "key": "nowhere" } ] }
+  ],
+  "issues": []
+}
