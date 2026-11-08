@@ -53,4 +53,4 @@ A message is a string. A list of strings is a message of several lines, joined w
 
 ## Defaults
 
-A plugin's default texts live in the same folder its administrators edit: the plugin writes its default locale's files into it, such as through Configura's defaults providers, and administrators change them or add other locales. A plugin's build can export the same defaults to the organisation's translations repository, where translators work on them. A product may also receive texts as [bundles](../bundles/index.md), merged below or above the folder as it chooses.
+A product keeps its own texts in its own repository and ships them, so anyone who runs it gets them. A plugin writes its default locale's files into the server's folder, such as through Configura's defaults providers, and administrators change them or add other locales there. An organisation adds its own layer on top: its own products' texts and its own versions of other products' texts, from its [translations repository](../bundles/index.md) as bundles.
