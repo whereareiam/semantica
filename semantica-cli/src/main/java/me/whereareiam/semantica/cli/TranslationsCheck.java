@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Loads a translations repository the way Semantica loads translations, with the checks of its namespaces' formats.
+ * Loads a translations repository the way Semantica loads translations, with the markup checks its key prefixes name.
  * MiniMessage is judged by the tags of Adventure 5, the newest.
  */
 final class TranslationsCheck {
@@ -36,10 +36,10 @@ final class TranslationsCheck {
 				})
 				.layer(Layer.of(FileSource.of(folder, Configura.builder().build())));
 
-		settings.getNamespaces().forEach((name, namespace) -> {
-			if ("adventure".equals(namespace.format()))
-				builder.check(AdventureRenderer.of(namespace.policy()).check(key -> key.startsWith(name + ".")));
-		});
+		for (RepositorySettings.Markup markup : settings.getMarkup()) {
+			builder.check(AdventureRenderer.of(markup.policy())
+					.check(key -> settings.markup(key).filter(markup::equals).isPresent()));
+		}
 
 		try (Semantica semantica = builder.build()) {
 			Catalog catalog = semantica.getCatalog();
@@ -47,12 +47,10 @@ final class TranslationsCheck {
 
 			for (Locale locale : catalog.getLocales()) {
 				for (Catalog.Entry entry : catalog.entries(locale).values()) {
-					int dot = entry.key().indexOf('.');
-					String namespace = dot < 0 ? entry.key() : entry.key().substring(0, dot);
-					if (settings.getNamespaces().containsKey(namespace)) continue;
+					if (settings.shipped(entry.key())) continue;
 
 					issues.add(new Issue(Issue.Kind.SOURCE, entry.key(), locale, null, entry.origin(),
-							"The namespace '" + namespace + "' is not listed in " + RepositorySettings.FILE));
+							"No product in " + RepositorySettings.FILE + " names a prefix of this key, so no bundle carries it"));
 				}
 			}
 

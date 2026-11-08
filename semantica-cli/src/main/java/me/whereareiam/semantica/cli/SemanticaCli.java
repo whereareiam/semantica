@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.cli;
 
+import me.whereareiam.semantica.KeyPrefix;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.source.http.Bundle;
@@ -146,14 +147,13 @@ public final class SemanticaCli {
 		delete(output);
 
 		Map<String, Map<Locale, String>> hashes = new LinkedHashMap<>();
-		for (Map.Entry<String, List<String>> product : settings.getProducts().entrySet()) {
+		for (Map.Entry<String, List<KeyPrefix>> product : settings.getProducts().entrySet()) {
 			Map<Locale, String> byLocale = new LinkedHashMap<>();
 			for (Locale locale : catalog.getLocales()) {
 				Map<String, String> messages = new TreeMap<>();
 				catalog.entries(locale).values().forEach(entry -> {
-					int dot = entry.key().indexOf('.');
-					String namespace = dot < 0 ? entry.key() : entry.key().substring(0, dot);
-					if (product.getValue().contains(namespace)) messages.put(entry.key(), entry.source());
+					if (product.getValue().stream().anyMatch(prefix -> prefix.matches(entry.key())))
+						messages.put(entry.key(), entry.source());
 				});
 				if (messages.isEmpty()) continue;
 
