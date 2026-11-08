@@ -9,24 +9,28 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * Watches a folder and everything below it, and calls back once things have been quiet for a moment, so
- * saving several files reloads once. While the folder does not exist, its parent is watched for it.
+ * Watches a folder and everything below it, apart from skipped folders directly in it, and calls back once things
+ * have been quiet for a moment, so saving several files reloads once. While the folder does not exist, its parent
+ * is watched for it.
  */
 final class FolderWatch implements AutoCloseable {
 	private static final System.Logger LOGGER = System.getLogger("Semantica");
 	private static final long QUIET_MILLIS = 300;
 
 	private final Path folder;
+	private final Set<String> skipped;
 	private final Runnable onChange;
 	private final WatchService service;
 	private final Thread thread;
 
-	FolderWatch(Path folder, Runnable onChange) throws IOException {
+	FolderWatch(Path folder, Set<String> skipped, Runnable onChange) throws IOException {
 		this.folder = folder.toAbsolutePath().normalize();
+		this.skipped = skipped;
 		this.onChange = onChange;
 		this.service = FileSystems.getDefault().newWatchService();
 
@@ -77,7 +81,7 @@ final class FolderWatch implements AutoCloseable {
 			}
 
 			Path path = watched.resolve((Path) event.context());
-			if (!path.startsWith(folder)) continue;
+			if (!path.startsWith(folder) || isSkipped(path)) continue;
 
 			changed = true;
 			if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE && Files.isDirectory(path)) registerTree(path);
@@ -89,10 +93,15 @@ final class FolderWatch implements AutoCloseable {
 
 	private void registerTree(Path root) {
 		try (Stream<Path> folders = Files.walk(root)) {
-			folders.filter(Files::isDirectory).forEach(this::register);
+			folders.filter(Files::isDirectory).filter(path -> !isSkipped(path)).forEach(this::register);
 		} catch (IOException exception) {
 			LOGGER.log(System.Logger.Level.WARNING, "Cannot watch " + root, exception);
 		}
+	}
+
+	private boolean isSkipped(Path path) {
+		if (!path.startsWith(folder) || path.equals(folder)) return false;
+		return skipped.contains(folder.relativize(path).getName(0).toString());
 	}
 
 	private void register(Path path) {

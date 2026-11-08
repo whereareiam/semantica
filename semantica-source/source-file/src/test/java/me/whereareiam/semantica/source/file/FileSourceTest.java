@@ -90,6 +90,39 @@ class FileSourceTest {
 	}
 
 	@Test
+	void leavesOutSkippedFoldersWithoutAnIssue() throws IOException {
+		writeSample(folder);
+		write(folder.resolve("rules/chat.yml"), "patterns: []\n");
+		write(folder.resolve("local/en/game/menu.json"), "{\"title\": \"Local\"}");
+		write(folder.resolve("local/rules/chat.yml"), "patterns: []\n");
+
+		Source.Content shared = FileSource.builder(folder, Configura.builder().build()).skip("rules", "local").build().load();
+		IssueAssert.assertNone(shared.getIssues());
+		assertEquals("Menu", shared.entries(EN).get("game.menu.title").text());
+
+		Source.Content local = FileSource.builder(folder.resolve("local"), Configura.builder().build()).skip("rules").build().load();
+		IssueAssert.assertNone(local.getIssues());
+		assertEquals("Local", local.entries(EN).get("game.menu.title").text());
+
+		IssueAssert.assertReported(FileSource.of(folder, Configura.builder().build()).load().getIssues(), Issue.Kind.SOURCE, null, null);
+	}
+
+	@Test
+	void doesNotWatchSkippedFolders() throws Exception {
+		writeSample(folder);
+		write(folder.resolve("rules/chat.yml"), "patterns: []\n");
+		CountDownLatch changed = new CountDownLatch(1);
+
+		try (AutoCloseable ignored = FileSource.builder(folder, Configura.builder().build()).skip("rules").build().watch(changed::countDown)) {
+			write(folder.resolve("rules/chat.yml"), "patterns: [a]\n");
+			assertFalse(changed.await(2, TimeUnit.SECONDS));
+
+			write(folder.resolve("en/game/menu.json"), "{\"title\": \"Changed\"}");
+			assertTrue(changed.await(10, TimeUnit.SECONDS));
+		}
+	}
+
+	@Test
 	void aMissingFolderHasNoTranslations() throws IOException {
 		Source.Content content = FileSource.of(folder.resolve("absent"), Configura.builder().build()).load();
 
