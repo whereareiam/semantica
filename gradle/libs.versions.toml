@@ -1,0 +1,47 @@
+[versions]
+
+# plugins
+shadow = "9.3.0"
+toolkit = "0.3.0"
+freefair = "9.5.0"
+
+# compile time processing
+lombok = "1.18.42"
+
+# general
+configura = "2.1.0"
+jackson = "2.20.0"
+icu4j = "79.1"
+adventure-v4 = "4.25.0"
+adventure-v5 = "5.2.0"
+annotations = "26.0.1"
+
+# testing
+junit = "6.0.1"
+
+[libraries]
+
+# compile time processing
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+lombok-plugin = { group = "io.freefair.gradle", name = "lombok-plugin", version.ref = "freefair" }
+toolkit-publish-maven = { group = "me.whereareiam.toolkit", name = "publish-maven", version.ref = "toolkit" }
+
+# general
+configura = { group = "me.whereareiam", name = "configura", version.ref = "configura" }
+jackson = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+icu4j = { group = "com.ibm.icu", name = "icu4j", version.ref = "icu4j" }
+adventure-v4-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure-v4" }
+adventure-v4-minimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure-v4" }
+adventure-v4-plain = { group = "net.kyori", name = "adventure-text-serializer-plain", version.ref = "adventure-v4" }
+adventure-v5-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure-v5" }
+adventure-v5-minimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure-v5" }
+adventure-v5-plain = { group = "net.kyori", name = "adventure-text-serializer-plain", version.ref = "adventure-v5" }
+annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+
+# testing
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+toolkit-versioning = { id = "me.whereareiam.toolkit.versioning", version.ref = "toolkit" }
