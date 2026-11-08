@@ -1,0 +1,38 @@
+{
+  "description": "Plural forms by CLDR's rules, exact values, offsets, # and ordinals.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "items": "{count, plural, =0 {No items} one {# item} other {# items}}",
+      "others": "{count, plural, offset:1 =0 {Nobody} =1 {Only {name}} one {{name} and # other} other {{name} and # others}}",
+      "place": "{place, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
+      "nested": "{count, plural, one {{kind, select, sword {a sword} other {a thing}}} other {{count} {kind, select, sword {swords} other {things}}}}",
+      "hash-in-select": "{count, plural, one {one} other {{kind, select, other {# stays #}}}}"
+    },
+    "ru": {
+      "items": "{count, plural, =0 {Нет предметов} one {# предмет} few {# предмета} many {# предметов} other {# предмета}}"
+    }
+  },
+  "cases": [
+    { "key": "items", "locale": "en", "values": { "count": 0 }, "expected": "No items" },
+    { "key": "items", "locale": "en", "values": { "count": 1 }, "expected": "1 item" },
+    { "key": "items", "locale": "en", "values": { "count": 2 }, "expected": "2 items" },
+    { "key": "items", "locale": "ru", "values": { "count": 1 }, "expected": "1 предмет" },
+    { "key": "items", "locale": "ru", "values": { "count": 3 }, "expected": "3 предмета" },
+    { "key": "items", "locale": "ru", "values": { "count": 5 }, "expected": "5 предметов" },
+    { "key": "items", "locale": "ru", "values": { "count": 21 }, "expected": "21 предмет" },
+    { "key": "items", "locale": "ru", "values": { "count": 1.5 }, "expected": "1,5 предмета" },
+    { "key": "others", "locale": "en", "values": { "count": 0, "name": "Ann" }, "expected": "Nobody" },
+    { "key": "others", "locale": "en", "values": { "count": 1, "name": "Ann" }, "expected": "Only Ann" },
+    { "key": "others", "locale": "en", "values": { "count": 2, "name": "Ann" }, "expected": "Ann and 1 other" },
+    { "key": "others", "locale": "en", "values": { "count": 4, "name": "Ann" }, "expected": "Ann and 3 others" },
+    { "key": "place", "locale": "en", "values": { "place": 1 }, "expected": "1st" },
+    { "key": "place", "locale": "en", "values": { "place": 22 }, "expected": "22nd" },
+    { "key": "place", "locale": "en", "values": { "place": 13 }, "expected": "13th" },
+    { "key": "nested", "locale": "en", "values": { "count": 2, "kind": "sword" }, "expected": "2 swords" },
+    { "key": "nested", "locale": "en", "values": { "count": 1, "kind": "sword" }, "expected": "a sword" },
+    { "key": "hash-in-select", "locale": "en", "values": { "count": 2, "kind": "any" }, "expected": "# stays #" },
+    { "key": "items", "locale": "en", "values": { "count": "many" }, "expected": "many items", "issues": [ { "kind": "invalid-value", "key": "items" } ] }
+  ],
+  "issues": []
+}

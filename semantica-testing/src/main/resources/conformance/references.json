@@ -1,0 +1,44 @@
+{
+  "description": "References to other messages, renamed arguments, nested texts, and references that are missing, cyclic or too deep.",
+  "defaultLocale": "en",
+  "limits": { "maxDepth": 3 },
+  "messages": {
+    "en": {
+      "vocabulary.player": "{count, plural, one {# player} other {# players}}",
+      "vocabulary.server": "Arbor",
+      "status": "{@vocabulary.server}: {@vocabulary.player count=online} online",
+      "greeting": "Welcome to {@vocabulary.server}, {name}!",
+      "item": "{count, plural, one {a sword} other {# swords}}",
+      "bought": "You bought {item}.",
+      "missing": "See {@vocabulary.nothing}",
+      "cycle.a": "A {@cycle.b}",
+      "cycle.b": "B {@cycle.a}",
+      "uses-cycle": "C {@cycle.a}",
+      "deep.1": "1 {@deep.2}",
+      "deep.2": "2 {@deep.3}",
+      "deep.3": "3 {@deep.4}",
+      "deep.4": "4 {@deep.5}",
+      "deep.5": "5",
+      "shallow": "0 {@deep.3}"
+    },
+    "de": {
+      "vocabulary.player": "{count, plural, one {# Spieler} other {# Spieler}}",
+      "status": "{@vocabulary.server}: {@vocabulary.player count=online} online"
+    }
+  },
+  "cases": [
+    { "key": "status", "locale": "en", "values": { "online": 3 }, "expected": "Arbor: 3 players online" },
+    { "key": "status", "locale": "de", "values": { "online": 1 }, "expected": "Arbor: 1 Spieler online" },
+    { "key": "greeting", "locale": "en", "values": { "name": "Ann" }, "expected": "Welcome to Arbor, Ann!" },
+    { "key": "bought", "locale": "en", "values": { "item": { "text": { "key": "item", "values": { "count": 2 } } } }, "expected": "You bought 2 swords." },
+    { "key": "shallow", "locale": "en", "expected": "0 3 4 5" },
+    { "key": "missing", "locale": "en", "expected": "missing", "issues": [ { "kind": "missing-key", "key": "missing" } ] }
+  ],
+  "issues": [
+    { "kind": "missing-reference", "locale": "en", "key": "missing" },
+    { "kind": "reference-cycle", "locale": "en", "key": "cycle.a" },
+    { "kind": "reference-cycle", "locale": "en", "key": "cycle.b" },
+    { "kind": "reference-cycle", "locale": "en", "key": "uses-cycle" },
+    { "kind": "depth-limit", "locale": "en", "key": "deep.1" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "description": "Numbers formatted for the locale of the message.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "plain": "{amount}",
+      "number": "{amount, number}",
+      "integer": "{amount, number, integer}",
+      "percent": "{amount, number, percent}"
+    },
+    "de": {
+      "plain": "{amount}",
+      "number": "{amount, number}"
+    }
+  },
+  "cases": [
+    { "key": "plain", "locale": "en", "values": { "amount": 1234.5 }, "expected": "1,234.5" },
+    { "key": "number", "locale": "en", "values": { "amount": 1234567 }, "expected": "1,234,567" },
+    { "key": "integer", "locale": "en", "values": { "amount": 2.75 }, "expected": "3" },
+    { "key": "percent", "locale": "en", "values": { "amount": 0.25 }, "expected": "25%" },
+    { "key": "plain", "locale": "de", "values": { "amount": 1234.5 }, "expected": "1.234,5" },
+    { "key": "number", "locale": "de", "values": { "amount": 1234567 }, "expected": "1.234.567" }
+  ],
+  "issues": []
+}

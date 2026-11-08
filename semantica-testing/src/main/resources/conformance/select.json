@@ -1,0 +1,18 @@
+{
+  "description": "Choices by a value: text, booleans, and the other branch.",
+  "defaultLocale": "en",
+  "messages": {
+    "en": {
+      "pronoun": "{gender, select, female {her} male {his} other {their}} sword",
+      "online": "{online, select, true {Online} other {Offline}}"
+    }
+  },
+  "cases": [
+    { "key": "pronoun", "locale": "en", "values": { "gender": "female" }, "expected": "her sword" },
+    { "key": "pronoun", "locale": "en", "values": { "gender": "robot" }, "expected": "their sword" },
+    { "key": "online", "locale": "en", "values": { "online": true }, "expected": "Online" },
+    { "key": "online", "locale": "en", "values": { "online": false }, "expected": "Offline" },
+    { "key": "pronoun", "locale": "en", "expected": "their sword", "issues": [ { "kind": "missing-value", "key": "pronoun" } ] }
+  ],
+  "issues": []
+}
