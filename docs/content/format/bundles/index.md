@@ -75,7 +75,7 @@ A bundle, `<product>/<locale>.json`, is one flat JSON object of the keys below t
 }
 ```
 
-A bundle holds only the messages of its own locale; falling back happens in the product (see [Fallback](../fallback/index.md)). A locale with no message for a product has no bundle for it.
+A bundle holds only the messages of its own locale; falling back happens in the product (see [Fallback](../fallback/index.md)). A locale with no message for a product has no bundle for it. The messages of the root locale, from the folder `all`, are the bundle `<product>/und.json`.
 
 ## The manifest
 
@@ -105,7 +105,7 @@ A bundle holds only the messages of its own locale; falling back happens in the 
 A product is configured with the address of the bundles, its product name, the locales it enables and optionally the key prefixes it keeps. It:
 
 1. reads `manifest.json`;
-2. wants the bundles of its enabled locales, of each one's base language (`pt` for `pt-BR`) and of the default locale, where the manifest has them;
+2. wants the bundles of its enabled locales, of each one's base language (`pt` for `pt-BR`), of the default locale and of the root locale (`und`), where the manifest has them;
 3. downloads a wanted bundle only when its hash differs from the one it holds, and uses it only when the SHA-256 of the downloaded bytes equals the manifest's hash;
 4. keeps the bundle it held, and reports a `source` issue, when a download fails or does not match;
 5. polls the manifest at an interval and loads again when the revision changes.

@@ -10,6 +10,7 @@ When changing behavior:
 
 - values a program gives are never read as markup or as part of a message; a format inserts them as data
 - a lookup never throws because of translations: report an issue and fall back
+- every locale chain ends with the default locale, then the root locale (`Locale.ROOT`, `und`, the folder `all`): messages that are the same in every language; they never count as a translation in the checks, and their formats follow the locale asked for
 - the catalog is immutable and replaced in one write; nothing a lookup holds changes under it
 - what the format specifies (`docs/content/format/`) and the conformance cases (`semantica-testing/src/main/resources/conformance/`) change together; the TypeScript `feature-i18n` follows them
 - markup belongs to each text format, never to the translation format

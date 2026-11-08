@@ -17,7 +17,9 @@ languages/
 
 ## Locale folders
 
-A locale folder is named by its language tag in BCP 47 form: `en`, `ru`, `pt-BR`, `zh-Hant-TW`. A language has two or three letters. A folder that is no locale is reported as a `source` issue and not read. Files directly in the folder, such as `semantica.json` or a README, are not read, and neither is any folder or file whose name starts with a dot.
+A locale folder is named by its language tag in BCP 47 form: `en`, `ru`, `pt-BR`, `zh-Hant-TW`. A language has two or three letters. A folder that is no locale is reported as a `source` issue and not read.
+
+The folder `all` holds the messages of the root locale: messages that are the same in every language (see [Fallback](../fallback/index.md)). An implementation may let the name be changed; Semantica's `FileSource.of(folder, configura, rootFolder)` does. In bundles and the manifest, the root locale is written `und`. Files directly in the folder, such as `semantica.json` or a README, are not read, and neither is any folder or file whose name starts with a dot.
 
 ## Keys
 
