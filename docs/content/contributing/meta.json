@@ -1,0 +1,11 @@
+{
+  "title": "Contributing",
+  "description": "Work on Semantica itself",
+  "icon": "GitPullRequest",
+  "root": true,
+  "pages": [
+    "building",
+    "modules",
+    "testing"
+  ]
+}

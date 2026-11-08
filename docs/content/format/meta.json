@@ -1,0 +1,21 @@
+{
+  "title": "Translation format",
+  "description": "How translations are written, stored, shipped and checked",
+  "icon": "Languages",
+  "root": true,
+  "pages": [
+    "---Writing Messages---",
+    "index",
+    "syntax",
+    "references",
+    "---Storing and Shipping---",
+    "files",
+    "bundles",
+    "---Using Messages---",
+    "fallback",
+    "limits",
+    "issues",
+    "---Implementations---",
+    "conformance"
+  ]
+}

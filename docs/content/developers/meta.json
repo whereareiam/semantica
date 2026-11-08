@@ -1,0 +1,18 @@
+{
+  "title": "Using Semantica",
+  "description": "Translate a plugin, mod or bot",
+  "icon": "Code",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "layers",
+    "lookup",
+    "---Formats---",
+    "adventure",
+    "---Translators and CI---",
+    "repository",
+    "---Testing---",
+    "testing"
+  ]
+}
