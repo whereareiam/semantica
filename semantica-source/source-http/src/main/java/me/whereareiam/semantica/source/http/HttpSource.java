@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.source.http;
 
+import me.whereareiam.semantica.KeyPrefix;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.source.Source;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * <pre>{@code
  * HttpSource bundles = HttpSource.builder(URI.create("https://translations.oraylen.com/bundles/"))
  *         .product("intercept")
- *         .namespaces("game", "common")
+ *         .prefixes("game", "realm.vanilla")
  *         .locales(Set.of(Locale.ENGLISH, Locale.forLanguageTag("ru")))
  *         .cache(dataFolder.resolve("cache/translations"))
  *         .build();
@@ -52,7 +54,7 @@ public final class HttpSource implements Source {
 
 	private final URI base;
 	private final String product;
-	private final Set<String> namespaces;
+	private final List<KeyPrefix> prefixes;
 	private final Set<Locale> locales;
 	private final Duration interval;
 	private final Duration timeout;
@@ -66,7 +68,7 @@ public final class HttpSource implements Source {
 	private HttpSource(Builder builder) {
 		this.base = builder.base;
 		this.product = builder.product;
-		this.namespaces = Set.copyOf(builder.namespaces);
+		this.prefixes = List.copyOf(builder.prefixes);
 		this.locales = builder.locales == null ? null : Set.copyOf(builder.locales);
 		this.interval = builder.interval;
 		this.timeout = builder.timeout;
@@ -184,17 +186,14 @@ public final class HttpSource implements Source {
 
 	private Content fill(Content.Builder content) {
 		bundles.forEach((locale, bundle) -> bundle.messages().forEach((key, text) -> {
-			if (inNamespace(key)) content.put(locale, key, text, Manifest.path(product, locale));
+			if (kept(key)) content.put(locale, key, text, Manifest.path(product, locale));
 		}));
 
 		return content.build();
 	}
 
-	private boolean inNamespace(String key) {
-		if (namespaces.isEmpty()) return true;
-
-		int dot = key.indexOf('.');
-		return namespaces.contains(dot < 0 ? key : key.substring(0, dot));
+	private boolean kept(String key) {
+		return prefixes.isEmpty() || prefixes.stream().anyMatch(prefix -> prefix.matches(key));
 	}
 
 	private Content fromCache() throws IOException {
@@ -265,7 +264,7 @@ public final class HttpSource implements Source {
 	public static final class Builder {
 		private final URI base;
 		private String product;
-		private final Set<String> namespaces = new LinkedHashSet<>();
+		private final List<KeyPrefix> prefixes = new ArrayList<>();
 		private Set<Locale> locales;
 		private Duration interval = Duration.ofMinutes(5);
 		private Duration timeout = Duration.ofSeconds(15);
@@ -290,14 +289,15 @@ public final class HttpSource implements Source {
 		}
 
 		/**
-		 * Keeps only keys of these namespaces, the first segment of a key. Without namespaces, every key of the
-		 * product's bundles is kept.
+		 * Keeps only keys below these prefixes, by whole segments. Without prefixes, every key of the product's
+		 * bundles is kept.
 		 *
-		 * @param namespaces the namespaces, such as {@code game}
+		 * @param prefixes the prefixes, such as {@code game} or {@code realm.vanilla}
 		 * @return this builder
+		 * @throws IllegalArgumentException when a value is no key prefix
 		 */
-		public @NotNull Builder namespaces(@NotNull String... namespaces) {
-			this.namespaces.addAll(List.of(namespaces));
+		public @NotNull Builder prefixes(@NotNull String... prefixes) {
+			for (String prefix : prefixes) this.prefixes.add(KeyPrefix.of(prefix));
 			return this;
 		}
 
