@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,22 +45,25 @@ class SemanticaCliTest {
 		write("semantica.json", """
 				{
 				  "defaultLocale": "en",
-				  "namespaces": {
+				  "markup": {
 					"game": { "format": "adventure" },
-					"discord": {},
-					"common": {}
+					"realm": { "format": "adventure" },
+					"realm.vanilla.mode.bedwars": { "format": "adventure", "allow": ["hover"] }
 				  },
 				  "products": {
-					"intercept": ["game", "common"],
-					"yui": ["discord", "common"]
+					"create": ["game", "realm.create.common"],
+					"bedwars": ["game", "realm.vanilla.common", "realm.vanilla.mode.bedwars"],
+					"website": ["website"]
 				  }
 				}
 				""");
 		write("en/game/menu.json", "{\"title\": \"<gold>Menu</gold>\"}");
-		write("en/common.json", "{\"unit\": \"{count, plural, one {# unit} other {# units}}\"}");
-		write("en/discord/command.json", "{\"ban\": {\"name\": \"ban\", \"description\": \"Ban a member\"}}");
+		write("en/realm/create/common/join.json", "{\"title\": \"Welcome to Create\"}");
+		write("en/realm/vanilla/common/join.json", "{\"title\": \"Welcome to Vanilla\"}");
+		write("en/realm/vanilla/mode/bedwars/bed.json", "{\"broken\": \"<hover:show_text:'{team}'>Your bed</hover> is gone, {team}\"}");
+		write("en/website/home.json", "{\"title\": \"<gren> is just text here\", \"unit\": \"{count, plural, one {# unit} other {# units}}\"}");
 		write("ru/game/menu.json", "{\"title\": \"<gold>Меню</gold>\"}");
-		write("ru/common.json", "{\"unit\": \"{count, plural, one {# единица} few {# единицы} many {# единиц} other {# единицы}}\"}");
+		write("ru/website/home.json", "{\"unit\": \"{count, plural, one {# единица} few {# единицы} many {# единиц} other {# единицы}}\"}");
 	}
 
 	@Test
@@ -67,14 +71,14 @@ class SemanticaCliTest {
 		writeRepository();
 
 		assertEquals(0, run(Map.of(), "check", folder.toString()), output());
-		assertTrue(output().contains("ru: 2/4 keys (50%)"), output());
+		assertTrue(output().contains("ru: 2/6 keys (33%)"), output());
 	}
 
 	@Test
 	void failsOnErrorsAndAnnotatesThemOnGitHub() throws IOException {
 		writeRepository();
 		write("ru/game/menu.json", "{\"title\": \"<click:run_command:/op>Меню</click>\", \"stale\": \"x\"}");
-		write("ru/common.json", "{\"unit\": \"{count, plural, one {# единица} other {# единицы}\"}");
+		write("ru/realm/vanilla/mode/bedwars/bed.json", "{\"broken\": \"<hover:show_text:'{team}'>Кровать</hover> {team\"}");
 		write("de/other/x.json", "{\"a\": \"b\"}");
 
 		assertEquals(1, run(Map.of("GITHUB_ACTIONS", "true"), "check", folder.toString()));
@@ -82,8 +86,9 @@ class SemanticaCliTest {
 		String output = output();
 		assertTrue(output.contains("error: markup ru game.menu.title"), output);
 		assertTrue(output.contains("error: unknown-key ru game.menu.stale"), output);
-		assertTrue(output.contains("error: syntax ru common.unit"), output);
+		assertTrue(output.contains("error: syntax ru realm.vanilla.mode.bedwars.bed.broken"), output);
 		assertTrue(output.contains("error: source de other.x.a"), output);
+		assertTrue(output.contains("no bundle carries it"), output);
 		assertTrue(output.contains("::error file=" + folder.resolve("ru/game/menu.json") + ",title=markup::ru game.menu.title"), output);
 	}
 
@@ -98,15 +103,16 @@ class SemanticaCliTest {
 		assertEquals("abc", manifest.getRevision());
 		assertEquals(Locale.ENGLISH, manifest.getDefaultLocale());
 
-		byte[] intercept = Files.readAllBytes(output.resolve("intercept/ru.json"));
-		assertEquals(Bundle.hash(intercept), manifest.bundles("intercept").get(Locale.forLanguageTag("ru")));
-		assertEquals(Map.of("common.unit", "{count, plural, one {# единица} few {# единицы} many {# единиц} other {# единицы}}",
-				"game.menu.title", "<gold>Меню</gold>"), Bundle.read(intercept));
+		Map<String, String> bedwars = Bundle.read(Files.readAllBytes(output.resolve("bedwars/en.json")));
+		assertEquals(Bundle.hash(Files.readAllBytes(output.resolve("bedwars/en.json"))), manifest.bundles("bedwars").get(Locale.ENGLISH));
+		assertEquals(Set.of("game.menu.title", "realm.vanilla.common.join.title", "realm.vanilla.mode.bedwars.bed.broken"), bedwars.keySet());
 
-		Map<String, String> yui = Bundle.read(Files.readAllBytes(output.resolve("yui/en.json")));
-		assertTrue(yui.containsKey("discord.command.ban.name"));
-		assertFalse(yui.containsKey("game.menu.title"));
-		assertFalse(Files.exists(output.resolve("yui/ru.json.tmp")));
+		Map<String, String> create = Bundle.read(Files.readAllBytes(output.resolve("create/en.json")));
+		assertEquals(Set.of("game.menu.title", "realm.create.common.join.title"), create.keySet());
+
+		assertEquals(Map.of("game.menu.title", "<gold>Меню</gold>"), Bundle.read(Files.readAllBytes(output.resolve("create/ru.json"))));
+		assertTrue(Files.exists(output.resolve("website/ru.json")));
+		assertFalse(Files.exists(output.resolve("bedwars/de.json")));
 	}
 
 	@Test
@@ -119,9 +125,9 @@ class SemanticaCliTest {
 
 	@Test
 	void explainsBrokenSettings() throws IOException {
-		write("semantica.json", "{\"defaultLocale\": \"en\", \"namespaces\": {\"game\": {}}, \"products\": {\"x\": [\"nope\"]}}");
+		write("semantica.json", "{\"defaultLocale\": \"en\", \"products\": {\"bedwars\": [\"realm..vanilla\"]}}");
 
 		assertEquals(2, run(Map.of(), "check", folder.toString()));
-		assertTrue(err.toString(StandardCharsets.UTF_8).contains("unknown namespace 'nope'"));
+		assertTrue(err.toString(StandardCharsets.UTF_8).contains("In product 'bedwars': 'realm..vanilla' is no key prefix"), err::toString);
 	}
 }
