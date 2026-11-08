@@ -83,13 +83,15 @@ class HttpSourceTest {
 		publish("1", Map.of(
 				EN, Map.of("game.menu.title", "Menu", "gamemode.title", "Mode", "discord.ticket.title", "Ticket"),
 				RU, Map.of("game.menu.title", "Меню"),
-				DE, Map.of("game.menu.title", "Menü")
+				DE, Map.of("game.menu.title", "Menü"),
+				Locale.ROOT, Map.of("game.menu.prefix", "{@game.menu.title}:")
 		));
 
 		Source.Content content = source().prefixes("game").locales(Set.of(Locale.forLanguageTag("ru-RU"))).build().load();
 
 		IssueAssert.assertNone(content.getIssues());
-		assertEquals(Set.of(EN, RU), content.getLocales());
+		assertEquals(Set.of(EN, RU, Locale.ROOT), content.getLocales());
+		assertTrue(requests.contains("intercept/und.json"));
 		assertEquals("Меню", content.entries(RU).get("game.menu.title").text());
 		assertFalse(content.entries(EN).containsKey("discord.ticket.title"));
 		assertFalse(content.entries(EN).containsKey("gamemode.title"));
