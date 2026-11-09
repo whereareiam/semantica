@@ -20,9 +20,9 @@ java -jar semantica-cli.jar bundle translations dist --revision "$GITHUB_SHA"
 | Command | Does | Exits with |
 | --- | --- | --- |
 | `check [folder]` | Prints every issue and the share of keys each locale translates. | 0 when there is no error, 1 when there is, 2 when `semantica.json` is wrong |
-| `bundle [folder] [output] [--revision value]` | Checks, then writes `<output>/<product>/<locale>.json` and `<output>/manifest.json`. | as `check` |
+| `bundle folder output [--revision value]` | Checks, then writes `<output>/<product>/<locale>.json` and `<output>/manifest.json`. | as `check` |
 
-The folder defaults to the current folder and the output to `bundles`. The output must be empty or hold earlier bundles; it is replaced as a whole. The revision defaults to `GITHUB_SHA`, and otherwise to a hash of the bundles.
+`check`'s folder defaults to the current folder. `bundle` needs both folders, and its output must lie outside the translations folder, where the next `check` would take it for a locale; it must be empty or hold earlier bundles, and it is replaced as a whole. The revision defaults to `GITHUB_SHA`, and otherwise to a hash of the bundles.
 
 ## What `check` reports
 
