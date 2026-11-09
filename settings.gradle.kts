@@ -57,3 +57,6 @@ project(":semantica-testing").projectDir = file("semantica-testing")
 
 include(":semantica-cli")
 project(":semantica-cli").projectDir = file("semantica-cli")
+
+include(":semantica-gradle")
+project(":semantica-gradle").projectDir = file("semantica-gradle")
