@@ -121,8 +121,23 @@ class SemanticaCliTest {
 	void refusesToReplaceAFolderThatHoldsOtherFiles() throws IOException {
 		writeRepository();
 
-		assertEquals(2, run(Map.of(), "bundle", folder.toString(), folder.toString()));
-		assertTrue(Files.exists(folder.resolve("semantica.json")));
+		Path outside = folder.resolveSibling(folder.getFileName() + "-notes");
+		Files.createDirectories(outside);
+		Files.writeString(outside.resolve("notes.txt"), "keep");
+
+		assertEquals(2, run(Map.of(), "bundle", folder.toString(), outside.toString()));
+		assertTrue(Files.exists(outside.resolve("notes.txt")));
+	}
+
+	@Test
+	void requiresAnOutputOutsideTheTranslations() throws IOException {
+		writeRepository();
+
+		assertEquals(2, run(Map.of(), "bundle", folder.toString()));
+		assertEquals(2, run(Map.of(), "bundle", folder.toString(), folder.resolve("bundles").toString()));
+		assertTrue(err.toString(StandardCharsets.UTF_8).contains("lies inside the translations folder"), err::toString);
+		assertFalse(Files.exists(folder.resolve("bundles")));
+		assertEquals(0, run(Map.of(), "check", folder.toString()), output());
 	}
 
 	@Test

@@ -25,19 +25,20 @@ import java.util.stream.Stream;
  *
  * <pre>
  * java -jar semantica-cli-all.jar check  [folder]
- * java -jar semantica-cli-all.jar bundle [folder] [output] [--revision value]
+ * java -jar semantica-cli-all.jar bundle folder output [--revision value]
  * </pre>
  *
- * <p>{@code check} loads the folder as Semantica would, prints every issue, and fails when an issue is an error.
- * {@code bundle} checks first, then writes {@code <output>/<product>/<locale>.json} for each product of
- * {@code semantica.json} and {@code <output>/manifest.json}. The folder defaults to the current folder, the output
- * to {@code bundles}.</p>
+ * <p>{@code check} loads the folder as Semantica would, prints every issue, and fails when an issue is an error;
+ * the folder defaults to the current folder. {@code bundle} checks first, then writes
+ * {@code <output>/<product>/<locale>.json} for each product of {@code semantica.json} and
+ * {@code <output>/manifest.json}. Both its folders are required, and the output must lie outside the
+ * translations, where {@code check} would take it for a locale.</p>
  */
 public final class SemanticaCli {
 	private static final String USAGE = """
 			Usage:
 			  semantica check  [folder]
-			  semantica bundle [folder] [output] [--revision value]
+			  semantica bundle folder output [--revision value]
 			""";
 
 	private final PrintStream out;
@@ -78,7 +79,7 @@ public final class SemanticaCli {
 			RepositorySettings settings = RepositorySettings.read(folder);
 			return switch (positional.getFirst()) {
 				case "check" -> check(folder, settings) ? 0 : 1;
-				case "bundle" -> bundle(folder, settings, Path.of(positional.size() > 2 ? positional.get(2) : "bundles"), revision);
+				case "bundle" -> bundle(positional, folder, settings, revision);
 				default -> {
 					err.print(USAGE);
 					yield 2;
@@ -91,6 +92,22 @@ public final class SemanticaCli {
 			err.println("error: " + exception.getMessage());
 			return 2;
 		}
+	}
+
+	private int bundle(List<String> positional, Path folder, RepositorySettings settings, String revision) throws IOException {
+		if (positional.size() < 3) {
+			err.print(USAGE);
+			return 2;
+		}
+
+		Path output = Path.of(positional.get(2));
+		if (output.toAbsolutePath().normalize().startsWith(folder.toAbsolutePath().normalize())) {
+			err.println("error: " + output + " lies inside the translations folder " + folder
+					+ ", where the next check would take it for a locale; write the bundles outside it");
+			return 2;
+		}
+
+		return bundle(folder, settings, output, revision);
 	}
 
 	private boolean check(Path folder, RepositorySettings settings) {
