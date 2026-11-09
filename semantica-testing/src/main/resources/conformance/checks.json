@@ -1,11 +1,16 @@
 {
-  "description": "Issues found by comparing translations with the default locale: unknown keys, different arguments, missing plural forms.",
+  "description": "Issues found by comparing translations with the default locale: unknown keys, different arguments, missing plural forms. A plural of exact values and other alone needs no forms unless a branch shows its number.",
   "defaultLocale": "en",
   "messages": {
     "en": {
       "greeting": "Hello, {name}!",
       "items": "{count, plural, one {# item} other {# items}}",
-      "lives": "{count, plural, one {One life left, {name}} other {# lives left, {name}}}"
+      "lives": "{count, plural, one {One life left, {name}} other {# lives left, {name}}}",
+      "builds.label": "{count, plural, =1 {Build:} other {Builds:}}",
+      "builds.count": "{count, plural, =1 {# build} other {# builds}}",
+      "builds.named": "{count, plural, =1 {One build} other {{count} builds}}",
+      "builds.nested": "{count, plural, =1 {{kind, select, other {One build}}} other {{kind, select, other {Builds: {count}}}}}",
+      "builds.inner": "{count, plural, =0 {{kind, plural, one {# kind} other {# kinds}}} other {Builds}}"
     },
     "de": {
       "greeting": "Hallo, {player}!",
@@ -14,16 +19,29 @@
     },
     "ru": {
       "greeting": "Привет!",
-      "items": "{count, plural, one {# предмет} other {# предмета}}"
+      "items": "{count, plural, one {# предмет} other {# предмета}}",
+      "builds.label": "{count, plural, =1 {Сборка:} other {Сборки:}}",
+      "builds.count": "{count, plural, =1 {# сборка} other {# сборок}}",
+      "builds.named": "{count, plural, =1 {Одна сборка} other {{count} сборок}}",
+      "builds.nested": "{count, plural, =1 {{kind, select, other {Одна сборка}}} other {{kind, select, other {Сборки: {count}}}}}",
+      "builds.inner": "{count, plural, =0 {{kind, plural, one {# вид} few {# вида} many {# видов} other {# вида}}} other {Сборки}}"
     }
   },
   "cases": [
-    { "key": "items", "locale": "ru", "values": { "count": 5 }, "expected": "5 предмета" }
+    { "key": "items", "locale": "ru", "values": { "count": 5 }, "expected": "5 предмета" },
+    { "key": "builds.label", "locale": "ru", "values": { "count": 1 }, "expected": "Сборка:" },
+    { "key": "builds.label", "locale": "ru", "values": { "count": 3 }, "expected": "Сборки:" }
   ],
   "issues": [
     { "kind": "argument-mismatch", "locale": "de", "key": "greeting" },
     { "kind": "argument-mismatch", "locale": "ru", "key": "greeting" },
     { "kind": "unknown-key", "locale": "de", "key": "removed" },
-    { "kind": "missing-plural-form", "locale": "ru", "key": "items" }
+    { "kind": "missing-plural-form", "locale": "ru", "key": "items" },
+    { "kind": "missing-plural-form", "locale": "ru", "key": "builds.count" },
+    { "kind": "missing-plural-form", "locale": "ru", "key": "builds.named" },
+    { "kind": "missing-plural-form", "locale": "ru", "key": "builds.nested" },
+    { "kind": "missing-plural-form", "locale": "en", "key": "builds.count" },
+    { "kind": "missing-plural-form", "locale": "en", "key": "builds.named" },
+    { "kind": "missing-plural-form", "locale": "en", "key": "builds.nested" }
   ]
 }
