@@ -42,6 +42,17 @@ Inside a branch, `#` shows the number, formatted as by `{count, number}`. `#` be
 
 Every plural has an `other` branch. Each language needs branches for its own categories: English uses `one` and `other`, Russian `one`, `few`, `many` and `other`, Arabic all six. A plural that lacks one of its language's categories is reported as `missing-plural-form`, and falls back to `other` for those numbers.
 
+A plural chosen only by exact values and `other` needs no categories, as long as no branch shows the number: neither `#` nor the plural's own argument, also not inside a choice nested in a branch or passed to a reference by a rename. Such a plural is a label, and `other` reads right for every number:
+
+| Message (`ru`) | Reported |
+| --- | --- |
+| `{count, plural, =1 {Сборка:} other {Сборки:}}` | no: no branch shows the number |
+| `{count, plural, =1 {# сборка} other {# сборок}}` | yes: `other` would read "3 сборок", so `one`, `few` and `many` are needed |
+| `{count, plural, =1 {Одна сборка} other {{count} сборок}}` | yes: the argument shows the number |
+| `{count, plural, one {# сборка} other {# сборок}}` | yes: a plural that uses a category needs all of them |
+
+Once a branch shows the number, exact values are extras beside the categories, never a replacement for them. A `#` inside a plural nested in a branch is that nested plural's number, not the outer one's.
+
 An offset subtracts from the number before its category is chosen and before `#` shows it, while exact values compare the number as given:
 
 ```text

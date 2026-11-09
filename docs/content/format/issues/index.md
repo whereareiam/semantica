@@ -16,7 +16,7 @@ A translations repository's CI fails on errors and prints warnings.
 | `missing-reference` | error | A reference names a key no locale of the chain has. | Left out. |
 | `reference-cycle` | error | References lead back into a cycle. | Left out. |
 | `depth-limit` | error | References go deeper than the [limit](../limits/index.md). | Left out. |
-| `missing-plural-form` | error | A plural lacks a category its language needs. | Used; those numbers take `other`. |
+| `missing-plural-form` | error | A plural lacks a category its language needs. A plural of exact values and `other` alone needs none while no branch shows its number; see [Syntax](../syntax/index.md). | Used; those numbers take `other`. |
 | `unknown-key` | error | A translation has a key the default locale lacks. The root locale is no translation and may. | Used. |
 | `argument-mismatch` | error | A translation uses an argument the default locale's message does not, or never shows one the default locale's message shows outside every branch. | Used; an unknown argument shows as `{name}`. |
 | `markup` | error | A text format's markup is not allowed, or differs from the default locale's message. | Used; the markup shows as written. |
