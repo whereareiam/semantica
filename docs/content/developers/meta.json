@@ -11,6 +11,7 @@
     "---Formats---",
     "adventure",
     "---Translators and CI---",
+    "gradle",
     "repository",
     "---Testing---",
     "testing"

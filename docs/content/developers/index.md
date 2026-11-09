@@ -22,6 +22,7 @@ Semantica is published to the [public Maven registry](https://registry.wherearei
 | `format-adventure-v4` | Adventure 4.25 (BungeeCord, Spigot); see [Adventure](./adventure/index.md) |
 | `semantica-testing` | `MemorySource`, `IssueAssert`; see [Testing](./testing/index.md) |
 | `semantica-cli` | the command a translations repository's CI runs; see [Translations repository](./repository/index.md) |
+| `semantica-gradle` | the Gradle plugin `me.whereareiam.semantica`, which exports a product's defaults for translators; see [Exporting defaults](./gradle/index.md) |
 
 ```kotlin
 repositories {
