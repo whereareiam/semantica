@@ -42,6 +42,8 @@ When changing behavior:
   The same classes for Adventure 5.2 (Paper, Velocity, Arbor through its own NeoForge bridge), `compileOnly`. Never subclass `AbstractComponentRenderer` in either: 5.x added an abstract method to it.
 - `semantica-testing`
   `MemorySource`, `IssueAssert`, and the conformance cases with `ConformanceTest`.
+- `semantica-gradle`
+  The Gradle plugin `me.whereareiam.semantica`: `translationsExport` runs a product's `TranslationDefaults` (in `source-file`) on its runtime classpath through `DefaultsExport` and writes `translations/<locale>/`; `translationsCheck`, part of `check`, fails when the committed files differ. Published as `pluginMaven` with its marker.
 - `semantica-cli`
   `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json` (`products` and `markup` by key prefix, the longest markup prefix wins). Published with a jar of all dependencies (classifier `all`).
 - `build-logic/`
