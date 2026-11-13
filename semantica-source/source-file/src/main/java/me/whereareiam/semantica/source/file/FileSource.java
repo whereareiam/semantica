@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -42,6 +43,10 @@ import java.util.stream.Stream;
  * <p>JSON and YAML are read through Configura, {@code .properties} through the JDK. A list of strings is a
  * message of several lines. Files directly in the folder, folders starting with a dot and folders named by
  * {@link Builder#skip(String...)} are not read.</p>
+ *
+ * <p>A folder that belongs to one owner among several, such as an add-on's beside its host's, can put a key
+ * prefix before every key it reads ({@link Builder#prefix(String)}), so two folders with the same files do not
+ * write the same keys.</p>
  */
 public final class FileSource implements Source {
 	/**
@@ -49,10 +54,13 @@ public final class FileSource implements Source {
 	 */
 	public static final String ROOT_FOLDER = "all";
 
+	private static final Pattern KEY_PREFIX = Pattern.compile("[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*");
+
 	private final String name;
 	private final Path folder;
 	private final String rootFolder;
 	private final Set<String> skipped;
+	private final String prefix;
 	private final Function<InputStream, JsonNode> treeReader;
 
 	private FileSource(Builder builder) {
@@ -60,6 +68,7 @@ public final class FileSource implements Source {
 		this.folder = builder.folder;
 		this.rootFolder = builder.rootFolder;
 		this.skipped = Set.copyOf(builder.skipped);
+		this.prefix = builder.prefix;
 		this.treeReader = builder.configura::readNode;
 	}
 
@@ -113,7 +122,7 @@ public final class FileSource implements Source {
 
 	@Override
 	public @NotNull Content load() throws IOException {
-		TranslationFiles files = new TranslationFiles(name, treeReader);
+		TranslationFiles files = new TranslationFiles(name, prefix, treeReader);
 		loadFolder(files);
 
 		return files.build();
@@ -181,6 +190,7 @@ public final class FileSource implements Source {
 		private final Configura configura;
 		private final Set<String> skipped = new LinkedHashSet<>();
 		private String rootFolder = ROOT_FOLDER;
+		private String prefix = "";
 
 		private Builder(Path folder, Configura configura) {
 			this.folder = Objects.requireNonNull(folder, "folder");
@@ -207,6 +217,30 @@ public final class FileSource implements Source {
 		 */
 		public @NotNull Builder skip(@NotNull String... names) {
 			for (String name : names) skipped.add(Objects.requireNonNull(name, "name"));
+			return this;
+		}
+
+		/**
+		 * Puts a key prefix before every key the folder holds: with {@code verification}, the file
+		 * {@code en/commands.yml} gives {@code verification.commands.*}. Use it for a folder that belongs to one
+		 * owner among several, such as an add-on's, so its keys cannot meet another owner's.
+		 *
+		 * <pre>{@code
+		 * FileSource.builder(addonsFolder.resolve("verification/messages"), configura)
+		 *         .prefix("verification")
+		 *         .build();
+		 * }</pre>
+		 *
+		 * @param prefix whole key segments, separated by dots, such as {@code verification} or {@code realm.vanilla}
+		 * @return this builder
+		 * @throws IllegalArgumentException when the prefix is empty or not made of key segments
+		 */
+		public @NotNull Builder prefix(@NotNull String prefix) {
+			Objects.requireNonNull(prefix, "prefix");
+			if (!KEY_PREFIX.matcher(prefix).matches())
+				throw new IllegalArgumentException("'" + prefix + "' is no key prefix; write segments of letters, digits, _ and - separated by dots");
+
+			this.prefix = prefix;
 			return this;
 		}
 

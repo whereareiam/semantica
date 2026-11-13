@@ -23,16 +23,19 @@ final class TranslationFiles {
 	private static final String[] TREE_EXTENSIONS = {".json", ".yml", ".yaml"};
 
 	private final String sourceName;
+	private final String keyPrefix;
 	private final Function<InputStream, JsonNode> treeReader;
 	private final Source.Content.Builder content = Source.Content.builder();
 	private final Map<Locale, Map<String, String>> origins = new HashMap<>();
 
 	/**
 	 * @param sourceName the source's name, for issues
+	 * @param keyPrefix  segments put before every key, or empty for none
 	 * @param treeReader reads JSON and YAML files
 	 */
-	TranslationFiles(String sourceName, Function<InputStream, JsonNode> treeReader) {
+	TranslationFiles(String sourceName, String keyPrefix, Function<InputStream, JsonNode> treeReader) {
 		this.sourceName = sourceName;
+		this.keyPrefix = keyPrefix.isEmpty() ? "" : keyPrefix + ".";
 		this.treeReader = treeReader;
 	}
 
@@ -69,7 +72,7 @@ final class TranslationFiles {
 			return;
 		}
 
-		String prefix = relative.substring(0, relative.length() - extension.length()).replace('/', '.');
+		String prefix = keyPrefix + relative.substring(0, relative.length() - extension.length()).replace('/', '.');
 		try (InputStream input = stream.open()) {
 			if (extension.equals(".properties")) properties(locale, prefix, origin, input);
 			else tree(locale, prefix, origin, treeReader.apply(input));
