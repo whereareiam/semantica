@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileSourceTest {
@@ -74,6 +75,32 @@ class FileSourceTest {
 		IssueAssert.assertReported(content.getIssues(), Issue.Kind.SOURCE, "game.menu.title", EN);
 		assertEquals(5, content.getIssues().size(), content.getIssues()::toString);
 		assertEquals("B", content.entries(EN).get("game.menu.title").text());
+	}
+
+	@Test
+	void putsTheKeyPrefixBeforeEveryKey() throws IOException {
+		writeSample(folder);
+		write(folder.resolve("all/links.yml"), "rules: \"{@game.rules}\"\n");
+
+		Source.Content content = FileSource.builder(folder, Configura.builder().build())
+				.prefix("verification")
+				.build()
+				.load();
+
+		IssueAssert.assertNone(content.getIssues());
+		assertEquals("Menu", content.entries(EN).get("verification.game.menu.title").text());
+		assertEquals("Olá, {name}!", content.entries(PT_BR).get("verification.chat.greeting").text());
+		assertEquals("{@game.rules}", content.entries(Locale.ROOT).get("verification.links.rules").text());
+		assertFalse(content.entries(EN).containsKey("game.menu.title"));
+	}
+
+	@Test
+	void refusesAPrefixThatIsNoKeySegments() {
+		FileSource.Builder builder = FileSource.builder(folder, Configura.builder().build());
+
+		assertThrows(IllegalArgumentException.class, () -> builder.prefix(""));
+		assertThrows(IllegalArgumentException.class, () -> builder.prefix("verification."));
+		assertThrows(IllegalArgumentException.class, () -> builder.prefix("a b"));
 	}
 
 	@Test

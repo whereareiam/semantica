@@ -79,6 +79,16 @@ semantica.remove("shop");
 semantica.replace("shop", Layer.owned("shop", FileSource.of(addonsFolder.resolve("shop/languages"), configura)));
 ```
 
+An add-on's folder usually holds the same files as its host's (`en/commands.yml` in both), and keys come from file paths, so the two would write the same keys. Give the add-on's source a key prefix, and every key it reads starts with it:
+
+```java
+semantica.add(Layer.owned("verification", FileSource.builder(addonsFolder.resolve("verification/messages"), configura)
+        .prefix("verification")
+        .build()));
+```
+
+`en/commands.yml` then gives `verification.commands.*`, and the host's `commands.*` stay its own. The prefix is whole key segments separated by dots, such as `verification` or `realm.vanilla`.
+
 `add`, `remove` and `replace` build one new catalog each and replace the old one at once. `add` takes several layers in one call.
 
 ## A source of your own
