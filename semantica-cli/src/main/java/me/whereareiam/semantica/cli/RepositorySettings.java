@@ -155,8 +155,8 @@ final class RepositorySettings {
 		}
 
 		/**
-		 * Plain sentences a launcher writes into Minecraft's {@code lang/<locale>.json}, with Java's format specifiers
-		 * for values.
+		 * Plain sentences a launcher writes into Minecraft's {@code lang/<locale>.json}, with {@code %s} or
+		 * {@code %1$s} for values.
 		 *
 		 * @param prefix the prefix
 		 */

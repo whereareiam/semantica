@@ -29,7 +29,7 @@ java -jar semantica-cli.jar bundle translations dist --revision "$GITHUB_SHA"
 Everything the engine reports while loading (see [Issues](../../format/issues/index.md)), plus:
 
 - for keys below a `markup` prefix with the format `adventure`: MiniMessage tags outside the defaults and that prefix's `allow`, judged by Adventure 5's tags, and tags that differ from the default locale;
-- for keys below a `markup` prefix with the format `minecraft`: ICU syntax (braces, and apostrophes ICU reads as quoting), a `%` that starts anything but `%s`, `%d`, `%1$s`, `%2$d` or `%%`, and format specifiers that differ from the default locale (see [Bundles](../../format/bundles/index.md));
+- for keys below a `markup` prefix with the format `minecraft`: ICU syntax (braces, and apostrophes ICU reads as quoting), a `%` that starts anything but `%s`, `%1$s`, `%2$s` and so on, or `%%`, and format specifiers that differ from the default locale (see [Bundles](../../format/bundles/index.md));
 - keys no product names a prefix of, since no bundle would carry them, and a default locale without a folder.
 
 Errors fail the check; warnings are printed. On GitHub Actions each issue is also an annotation on its file.
@@ -37,7 +37,7 @@ Errors fail the check; warnings are printed. On GitHub Actions each issue is als
 ```text
 error: syntax ru game.menu.title (ru/game/menu.json): Unexpected end of the message; a '}' is missing (at 12)
 error: markup de game.shop.buy (de/game/shop.json): Uses other tags than en; lacks [gold]
-error: markup ru item.minecraft.drink (ru/item/minecraft.json): Uses other format specifiers than en; lacks [%1$s]; adds [%1$d]
+error: markup ru item.minecraft.drink (ru/item/minecraft.json): Uses other format specifiers than en; lacks [%2$s]
 ru: 412/430 keys (95%)
 3 errors, 0 warnings.
 ```

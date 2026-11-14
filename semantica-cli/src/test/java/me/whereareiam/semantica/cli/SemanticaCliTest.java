@@ -159,7 +159,8 @@ class SemanticaCliTest {
 		String output = output();
 		assertTrue(output.contains("error: markup en item.minecraft.name"), output);
 		assertTrue(output.contains("error: markup ru item.minecraft.drink"), output);
-		assertTrue(output.contains("Uses other format specifiers than en; lacks [%1$s]; adds [%1$d]"), output);
+		assertTrue(output.contains("%d is no format specifier Minecraft fills"), output);
+		assertTrue(output.contains("Uses other format specifiers than en; lacks [%1$s]"), output);
 		assertFalse(output.contains("item.minecraft.potion"), output);
 	}
 

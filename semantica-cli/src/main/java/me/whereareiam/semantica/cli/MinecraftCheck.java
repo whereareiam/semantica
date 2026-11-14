@@ -18,9 +18,9 @@ import java.util.regex.Pattern;
 
 /**
  * Checks texts that a launcher writes into Minecraft's {@code lang/<locale>.json}, where they are shown as written
- * and only Java's format specifiers are filled: a text holds no ICU syntax, each {@code %} starts {@code %s},
- * {@code %d}, {@code %1$s}, {@code %2$d} or {@code %%}, and a translation fills the same specifiers as the message
- * of the default locale.
+ * and the client fills only the specifiers its {@code TranslatableContents} knows: a text holds no ICU syntax, each
+ * {@code %} starts {@code %s}, {@code %1$s}, {@code %2$s} and so on, or {@code %%}, and a translation fills the same
+ * specifiers as the message of the default locale.
  *
  * <p>A bundle carries a message as written, and so does the launcher, so the check reads what was written rather
  * than what ICU parsed: an apostrophe such as {@code Don't} reads alike in both, while {@code ''}, a quoted
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  */
 @RequiredArgsConstructor
 final class MinecraftCheck implements Check {
-	private static final Pattern PERCENT = Pattern.compile("%(?:([1-9][0-9]{0,8})\\$)?([sd])|%%|%[-#+0(<.0-9$]{0,8}[a-zA-Z]?");
+	private static final Pattern PERCENT = Pattern.compile("%(?:([1-9][0-9]{0,8})\\$)?(s)|%%|%[-#+0(<.0-9$]{0,8}[a-zA-Z]?");
 
 	private final Predicate<String> keys;
 
@@ -43,7 +43,7 @@ final class MinecraftCheck implements Check {
 				icu(entry).ifPresent(detail -> issues.add(issue(entry, detail)));
 				Percents percents = Percents.of(entry.source());
 				for (String unknown : new LinkedHashSet<>(percents.unknown())) {
-					issues.add(issue(entry, unknown + " is no format specifier Minecraft fills; use %s, %d, %1$s, %2$d"
+					issues.add(issue(entry, unknown + " is no format specifier Minecraft fills; use %s, %1$s, %2$s"
 							+ " and so on, or %% for a percent sign"));
 				}
 
