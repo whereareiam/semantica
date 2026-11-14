@@ -95,6 +95,53 @@ class FileSourceTest {
 	}
 
 	@Test
+	void groupingFoldersAddNoKeySegment() throws IOException {
+		write(folder.resolve("en/web/website/community/forum.json"), "{\"title\": \"Forum\"}");
+		write(folder.resolve("en/web/common.json"), "{\"save\": \"Save\"}");
+		write(folder.resolve("en/web/common/buttons.json"), "{\"close\": \"Close\"}");
+		write(folder.resolve("en/game/extras/pets/dog.json"), "{\"name\": \"Dog\"}");
+		write(folder.resolve("en/game/menu.json"), "{\"title\": \"Menu\"}");
+		write(folder.resolve("all/web/links.yml"), "forum: \"{@website.community.forum.title}\"\n");
+
+		Source.Content content = FileSource.builder(folder, Configura.builder().build())
+				.grouping("web", "game/extras")
+				.build()
+				.load();
+
+		IssueAssert.assertNone(content.getIssues());
+		assertEquals("Forum", content.entries(EN).get("website.community.forum.title").text());
+		assertEquals("Save", content.entries(EN).get("common.save").text());
+		assertEquals("Close", content.entries(EN).get("common.buttons.close").text());
+		assertEquals("Dog", content.entries(EN).get("game.pets.dog.name").text());
+		assertEquals("Menu", content.entries(EN).get("game.menu.title").text());
+		assertEquals("{@website.community.forum.title}", content.entries(Locale.ROOT).get("links.forum").text());
+		assertEquals("en/web/website/community/forum.json", content.entries(EN).get("website.community.forum.title").origin());
+		assertTrue(content.entries(EN).keySet().stream().noneMatch(key -> key.startsWith("web.") || key.contains("extras")));
+	}
+
+	@Test
+	void reportsAKeyThatGroupingGivesTwice() throws IOException {
+		write(folder.resolve("en/web/website.json"), "{\"title\": \"A\"}");
+		write(folder.resolve("en/website.json"), "{\"title\": \"B\"}");
+
+		Source.Content content = FileSource.builder(folder, Configura.builder().build()).grouping("web").build().load();
+
+		Issue issue = IssueAssert.assertReported(content.getIssues(), Issue.Kind.SOURCE, "website.title", EN);
+		assertTrue(issue.getDetail().startsWith("Also written in "), issue::getDetail);
+	}
+
+	@Test
+	void refusesAGroupingThatIsNoFolderPath() {
+		FileSource.Builder builder = FileSource.builder(folder, Configura.builder().build());
+
+		assertThrows(IllegalArgumentException.class, () -> builder.grouping(""));
+		assertThrows(IllegalArgumentException.class, () -> builder.grouping("web/"));
+		assertThrows(IllegalArgumentException.class, () -> builder.grouping("/web"));
+		assertThrows(IllegalArgumentException.class, () -> builder.grouping("../web"));
+		assertThrows(IllegalArgumentException.class, () -> builder.grouping("web.site"));
+	}
+
+	@Test
 	void refusesAPrefixThatIsNoKeySegments() {
 		FileSource.Builder builder = FileSource.builder(folder, Configura.builder().build());
 

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -24,6 +25,7 @@ final class TranslationFiles {
 
 	private final String sourceName;
 	private final String keyPrefix;
+	private final Set<String> grouping;
 	private final Function<InputStream, JsonNode> treeReader;
 	private final Source.Content.Builder content = Source.Content.builder();
 	private final Map<Locale, Map<String, String>> origins = new HashMap<>();
@@ -31,11 +33,13 @@ final class TranslationFiles {
 	/**
 	 * @param sourceName the source's name, for issues
 	 * @param keyPrefix  segments put before every key, or empty for none
+	 * @param grouping   folder paths inside a locale folder that add no key segment
 	 * @param treeReader reads JSON and YAML files
 	 */
-	TranslationFiles(String sourceName, String keyPrefix, Function<InputStream, JsonNode> treeReader) {
+	TranslationFiles(String sourceName, String keyPrefix, Set<String> grouping, Function<InputStream, JsonNode> treeReader) {
 		this.sourceName = sourceName;
 		this.keyPrefix = keyPrefix.isEmpty() ? "" : keyPrefix + ".";
+		this.grouping = grouping;
 		this.treeReader = treeReader;
 	}
 
@@ -72,7 +76,7 @@ final class TranslationFiles {
 			return;
 		}
 
-		String prefix = keyPrefix + relative.substring(0, relative.length() - extension.length()).replace('/', '.');
+		String prefix = keyPrefix + segments(relative.substring(0, relative.length() - extension.length()));
 		try (InputStream input = stream.open()) {
 			if (extension.equals(".properties")) properties(locale, prefix, origin, input);
 			else tree(locale, prefix, origin, treeReader.apply(input));
@@ -133,6 +137,23 @@ final class TranslationFiles {
 
 	private void issue(String key, Locale locale, String origin, String detail) {
 		content.issue(new Issue(Issue.Kind.SOURCE, key, locale, sourceName, origin, detail));
+	}
+
+	private String segments(String path) {
+		String[] parts = path.split("/");
+		StringBuilder folder = new StringBuilder();
+		StringBuilder segments = new StringBuilder();
+
+		for (int index = 0; index < parts.length; index++) {
+			if (index > 0) folder.append('/');
+			folder.append(parts[index]);
+			if (index < parts.length - 1 && grouping.contains(folder.toString())) continue;
+
+			if (!segments.isEmpty()) segments.append('.');
+			segments.append(parts[index]);
+		}
+
+		return segments.toString();
 	}
 
 	private static String extension(String lower) {
