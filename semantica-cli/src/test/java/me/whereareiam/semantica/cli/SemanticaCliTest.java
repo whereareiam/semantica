@@ -141,6 +141,38 @@ class SemanticaCliTest {
 	}
 
 	@Test
+	void readsGroupingFoldersFromTheSettings() throws IOException {
+		write("semantica.json", """
+				{
+				  "defaultLocale": "en",
+				  "grouping": ["web"],
+				  "products": { "website": ["website", "common"] }
+				}
+				""");
+		write("en/web/website/community/forum.json", "{\"title\": \"Forum\"}");
+		write("en/web/common.json", "{\"save\": \"Save\"}");
+		write("ru/web/website/community/forum.json", "{\"title\": \"Форум\"}");
+		Path output = folder.resolve("../grouped").normalize();
+
+		assertEquals(0, run(Map.of(), "bundle", folder.toString(), output.toString()), output());
+		assertEquals(Set.of("website.community.forum.title", "common.save"), Bundle.read(Files.readAllBytes(output.resolve("website/en.json"))).keySet());
+		assertEquals(Map.of("website.community.forum.title", "Форум"), Bundle.read(Files.readAllBytes(output.resolve("website/ru.json"))));
+	}
+
+	@Test
+	void refusesAGroupingThatIsNoFolderPath() throws IOException {
+		write("semantica.json", "{\"defaultLocale\": \"en\", \"grouping\": [\"web/\"], \"products\": {\"website\": [\"website\"]}}");
+		assertEquals(2, run(Map.of(), "check", folder.toString()));
+		assertTrue(err.toString(StandardCharsets.UTF_8).contains("In grouping: 'web/' is no folder path"), err::toString);
+
+		write("semantica.json", "{\"defaultLocale\": \"en\", \"grouping\": [3], \"products\": {\"website\": [\"website\"]}}");
+		assertEquals(2, run(Map.of(), "check", folder.toString()));
+
+		write("semantica.json", "{\"defaultLocale\": \"en\", \"grouping\": \"web\", \"products\": {\"website\": [\"website\"]}}");
+		assertEquals(2, run(Map.of(), "check", folder.toString()));
+	}
+
+	@Test
 	void explainsBrokenSettings() throws IOException {
 		write("semantica.json", "{\"defaultLocale\": \"en\", \"products\": {\"bedwars\": [\"realm..vanilla\"]}}");
 

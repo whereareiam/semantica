@@ -3,8 +3,10 @@ package me.whereareiam.semantica.cli;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import me.whereareiam.configura.Configura;
 import me.whereareiam.semantica.KeyPrefix;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
+import me.whereareiam.semantica.source.file.FileSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,6 +25,7 @@ import java.util.Optional;
  * <pre>{@code
  * {
  *   "defaultLocale": "en",
+ *   "grouping": ["web"],
  *   "markup": {
  *     "game":  { "format": "adventure", "allow": ["hover"] },
  *     "realm": { "format": "adventure" }
@@ -40,11 +43,13 @@ final class RepositorySettings {
 	static final String FILE = "semantica.json";
 
 	private final Locale defaultLocale;
+	private final List<String> grouping;
 	private final List<Markup> markup;
 	private final Map<String, List<KeyPrefix>> products;
 
-	private RepositorySettings(Locale defaultLocale, List<Markup> markup, Map<String, List<KeyPrefix>> products) {
+	private RepositorySettings(Locale defaultLocale, List<String> grouping, List<Markup> markup, Map<String, List<KeyPrefix>> products) {
 		this.defaultLocale = defaultLocale;
+		this.grouping = grouping;
 		this.markup = markup;
 		this.products = products;
 	}
@@ -72,7 +77,7 @@ final class RepositorySettings {
 		}
 		if (products.isEmpty()) throw new SettingsException(FILE + " lists no products");
 
-		return new RepositorySettings(Locale.forLanguageTag(defaultLocale), List.copyOf(markup), products);
+		return new RepositorySettings(Locale.forLanguageTag(defaultLocale), grouping(root.path("grouping")), List.copyOf(markup), products);
 	}
 
 	/**
@@ -101,6 +106,25 @@ final class RepositorySettings {
 		} catch (IllegalArgumentException exception) {
 			throw new SettingsException("In " + where + ": " + exception.getMessage());
 		}
+	}
+
+	private static List<String> grouping(JsonNode node) {
+		if (node.isMissingNode()) return List.of();
+		if (!node.isArray()) throw new SettingsException("grouping lists folder paths, such as [\"web\"]");
+
+		FileSource.Builder check = FileSource.builder(Path.of("."), Configura.builder().build());
+		List<String> folders = new ArrayList<>();
+		for (JsonNode folder : node) {
+			if (!folder.isTextual()) throw new SettingsException("In grouping: " + folder + " is no folder path");
+			try {
+				check.grouping(folder.textValue());
+			} catch (IllegalArgumentException exception) {
+				throw new SettingsException("In grouping: " + exception.getMessage());
+			}
+			folders.add(folder.textValue());
+		}
+
+		return List.copyOf(folders);
 	}
 
 	private static Markup markup(KeyPrefix prefix, JsonNode node) {
