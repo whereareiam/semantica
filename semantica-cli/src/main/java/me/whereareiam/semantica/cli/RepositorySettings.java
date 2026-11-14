@@ -25,7 +25,8 @@ import java.util.Optional;
  *   "defaultLocale": "en",
  *   "markup": {
  *     "game":  { "format": "adventure", "allow": ["hover"] },
- *     "realm": { "format": "adventure" }
+ *     "realm": { "format": "adventure" },
+ *     "item":  { "format": "minecraft" }
  *   },
  *   "products": {
  *     "create":  ["game", "realm.create.common"],
@@ -105,9 +106,15 @@ final class RepositorySettings {
 
 	private static Markup markup(KeyPrefix prefix, JsonNode node) {
 		String format = node.path("format").asText("");
-		if (!format.equals("adventure"))
-			throw new SettingsException("Markup of '" + prefix + "' names the unknown format '" + format + "'; use adventure");
+		return switch (format) {
+			case "adventure" -> new Markup.Adventure(prefix, policy(prefix, node));
+			case "minecraft" -> minecraft(prefix, node);
+			default -> throw new SettingsException("Markup of '" + prefix + "' names the unknown format '" + format
+					+ "'; use adventure or minecraft");
+		};
+	}
 
+	private static TagPolicy policy(KeyPrefix prefix, JsonNode node) {
 		TagPolicy policy = TagPolicy.defaults();
 		for (JsonNode group : node.path("allow")) {
 			try {
@@ -117,17 +124,44 @@ final class RepositorySettings {
 			}
 		}
 
-		return new Markup(prefix, format, policy);
+		return policy;
+	}
+
+	private static Markup minecraft(KeyPrefix prefix, JsonNode node) {
+		if (node.has("allow"))
+			throw new SettingsException("Markup of '" + prefix + "' allows tag groups, but minecraft texts have no tags; remove allow");
+
+		return new Markup.Minecraft(prefix);
 	}
 
 	/**
 	 * The text format of the keys below a prefix.
-	 *
-	 * @param prefix the prefix
-	 * @param format the text format, {@code adventure}
-	 * @param policy the MiniMessage tags its texts may use
 	 */
-	record Markup(KeyPrefix prefix, String format, TagPolicy policy) {
+	sealed interface Markup {
+		/**
+		 * Returns the prefix of the keys this markup applies to.
+		 *
+		 * @return the prefix
+		 */
+		KeyPrefix prefix();
+
+		/**
+		 * MiniMessage, shown through Adventure.
+		 *
+		 * @param prefix the prefix
+		 * @param policy the MiniMessage tags its texts may use
+		 */
+		record Adventure(KeyPrefix prefix, TagPolicy policy) implements Markup {
+		}
+
+		/**
+		 * Plain sentences a launcher writes into Minecraft's {@code lang/<locale>.json}, with Java's format specifiers
+		 * for values.
+		 *
+		 * @param prefix the prefix
+		 */
+		record Minecraft(KeyPrefix prefix) implements Markup {
+		}
 	}
 
 	/**
