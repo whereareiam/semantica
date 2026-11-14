@@ -141,6 +141,43 @@ class SemanticaCliTest {
 	}
 
 	@Test
+	void checksTextsForMinecraftsLangFiles() throws IOException {
+		write("semantica.json", """
+				{
+				  "defaultLocale": "en",
+				  "markup": { "item": { "format": "minecraft" } },
+				  "products": { "launcher": ["item"] }
+				}
+				""");
+		write("en/item/minecraft.json", """
+				{"potion": "Potion", "potion.effect.water": "Water Bottle", "drink": "Don't drink %s", "name": "Hello, {name}"}
+				""");
+		write("ru/item/minecraft.json", "{\"potion\": \"Зелье\", \"drink\": \"Не пей %d\"}");
+
+		assertEquals(1, run(Map.of(), "check", folder.toString()));
+
+		String output = output();
+		assertTrue(output.contains("error: markup en item.minecraft.name"), output);
+		assertTrue(output.contains("error: markup ru item.minecraft.drink"), output);
+		assertTrue(output.contains("Uses other format specifiers than en; lacks [%1$s]; adds [%1$d]"), output);
+		assertFalse(output.contains("item.minecraft.potion"), output);
+	}
+
+	@Test
+	void refusesTagGroupsForMinecraftTexts() throws IOException {
+		write("semantica.json", """
+				{
+				  "defaultLocale": "en",
+				  "markup": { "item": { "format": "minecraft", "allow": ["hover"] } },
+				  "products": { "launcher": ["item"] }
+				}
+				""");
+
+		assertEquals(2, run(Map.of(), "check", folder.toString()));
+		assertTrue(err.toString(StandardCharsets.UTF_8).contains("Markup of 'item' allows tag groups, but minecraft texts have no tags"), err::toString);
+	}
+
+	@Test
 	void explainsBrokenSettings() throws IOException {
 		write("semantica.json", "{\"defaultLocale\": \"en\", \"products\": {\"bedwars\": [\"realm..vanilla\"]}}");
 

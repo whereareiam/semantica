@@ -13,10 +13,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 /**
  * Loads a translations repository the way Semantica loads translations, with the markup checks its key prefixes name.
- * MiniMessage is judged by the tags of Adventure 5, the newest.
+ * MiniMessage is judged by the tags of Adventure 5, the newest; texts for Minecraft's lang files by {@link MinecraftCheck}.
  */
 final class TranslationsCheck {
 	private final Path folder;
@@ -37,8 +38,11 @@ final class TranslationsCheck {
 				.layer(Layer.of(FileSource.of(folder, Configura.builder().build())));
 
 		for (RepositorySettings.Markup markup : settings.getMarkup()) {
-			builder.check(AdventureRenderer.of(markup.policy())
-					.check(key -> settings.markup(key).filter(markup::equals).isPresent()));
+			Predicate<String> keys = key -> settings.markup(key).filter(markup::equals).isPresent();
+			builder.check(switch (markup) {
+				case RepositorySettings.Markup.Adventure adventure -> AdventureRenderer.of(adventure.policy()).check(keys);
+				case RepositorySettings.Markup.Minecraft ignored -> new MinecraftCheck(keys);
+			});
 		}
 
 		try (Semantica semantica = builder.build()) {
