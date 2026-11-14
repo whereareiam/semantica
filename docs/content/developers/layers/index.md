@@ -37,6 +37,16 @@ FileSource local = FileSource.builder(dataFolder.resolve("translations/local"), 
         .build();
 ```
 
+Folders that only group other folders add no key segment when they are named as grouping, by their path inside a locale folder. They are honoured in every locale folder, `all` included:
+
+```java
+FileSource repository = FileSource.builder(dataFolder.resolve("translations"), configura)
+        .grouping("web", "game/extras")
+        .build();
+```
+
+`en/web/website/community/forum.json` then holds `website.community.forum.*`, and a file directly in a grouping folder takes its own name as if it lay one level up: `en/web/common.json` holds `common.*`, beside `en/web/common/buttons.json` with `common.buttons.*`. With `game/extras`, `game` still adds its segment: `en/game/extras/pets.json` holds `game.pets.*`. Two files that give the same key are reported like any key written twice.
+
 The folder holds the plugin's own texts: the plugin writes its English defaults into `languages/en/`, such as through Configura's defaults providers, and administrators change them there or add other languages. Semantica only reads the folder.
 
 ## An organisation's bundles

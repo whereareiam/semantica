@@ -41,7 +41,15 @@ The path of a file inside its locale folder, without its extension and with `/` 
 
 Write a key's segments with letters, digits, `_` and `-`; a [reference](../references/index.md) can name no other key. A name with a dot inside a file, such as `"button.close"`, is read the same as the nested form.
 
-A key written twice in one locale, in two files or in one, is reported as a `source` issue; the file read last, by path, wins.
+A folder can be named as grouping, by its path inside a locale folder, such as `web` or `game/extras`; Semantica's `FileSource.builder(...).grouping(...)` and the `grouping` of a translations repository's `semantica.json` ([Bundles](../bundles/index.md)) do. A grouping folder adds no segment, in every locale folder and in `all`; the folders around it still do. With `web` grouping:
+
+| File | Keys |
+| --- | --- |
+| `en/web/website/community/forum.json` | `website.community.forum.*` |
+| `en/web/common.json` | `common.*` |
+| `en/web/common/buttons.json` | `common.buttons.*` |
+
+A key written twice in one locale, in two files or in one, is reported as a `source` issue; the file read last, by path, wins. That includes two files that give the same key through a grouping folder, such as `en/web/website.json` and `en/website.json`.
 
 ## File types
 
