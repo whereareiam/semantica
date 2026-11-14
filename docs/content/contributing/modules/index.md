@@ -18,7 +18,7 @@ description: How the repository is laid out, which module owns what, and how a t
 | `format-adventure-v5` | `semantica-format/type/format-adventure/adventure-v5/` | The same classes for Adventure 5.2, `compileOnly`. |
 | `semantica-testing` | `semantica-testing/` | `MemorySource`, `IssueAssert`, and the conformance cases under `src/main/resources/conformance/`. |
 | `semantica-gradle` | `semantica-gradle/` | The Gradle plugin `me.whereareiam.semantica`: `SemanticaPlugin`, `SemanticaExtension`, the tasks `TranslationsExport` and `TranslationsCheck` and their base `DefaultsTask`. It runs `DefaultsExport` of `source-file` on the product's runtime classpath and depends on nothing of Semantica itself. |
-| `semantica-cli` | `semantica-cli/` | `SemanticaCli` with `check` and `bundle`, `RepositorySettings` (`semantica.json`) and `TranslationsCheck`, which judges MiniMessage by `format-adventure-v5`. Published with a jar of all its dependencies. |
+| `semantica-cli` | `semantica-cli/` | `SemanticaCli` with `check` and `bundle`, `RepositorySettings` (`semantica.json`) and `TranslationsCheck`, which judges MiniMessage by `format-adventure-v5` and texts for Minecraft's lang files by `MinecraftCheck`. Published with a jar of all its dependencies. |
 
 `build-logic/` holds the Gradle conventions: `module-java` (group, Java 21 toolchain, Lombok, JetBrains annotations, JUnit, sources and Javadoc jars), `module-api` (`module-java` with publication) and `packaging-publication` (Maven publication through the toolkit).
 
