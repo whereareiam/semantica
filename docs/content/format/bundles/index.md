@@ -51,10 +51,10 @@ The locale folders follow [Files](../files/index.md): a file's path is the prefi
 | `markup.<prefix>.format` | `adventure` (MiniMessage), or `minecraft`: plain sentences that a launcher writes into Minecraft's `lang/<locale>.json`, as described below. |
 | `markup.<prefix>.allow` | MiniMessage tag groups allowed beyond the defaults, such as `hover`, `click`, `insertion`. Only for `adventure`; with `minecraft` it is an error in `semantica.json`. |
 
-Minecraft shows the texts of its lang files as written and fills only Java's format specifiers, so a text below a `minecraft` prefix is checked as it was written, not as ICU reads it. Each of these is a `markup` issue:
+Minecraft shows the texts of its lang files as written and fills only `%s`, `%1$s`, `%2$s` and so on, and `%%`, so a text below a `minecraft` prefix is checked as it was written, not as ICU reads it. Each of these is a `markup` issue:
 
 - ICU syntax: any `{` or `}`, so no arguments, plurals, selects or references, and no quoted `'{'` either; and apostrophes that ICU reads as quoting, such as `''`. A single apostrophe, as in `Don't`, is text in both.
-- A `%` that starts anything but `%s`, `%d`, `%1$s`, `%2$d` and so on, or `%%` for a percent sign.
+- A `%` that starts anything but `%s`, `%1$s`, `%2$s` and so on, or `%%` for a percent sign. The client refuses every other specifier, `%d` too.
 - A translation that fills other specifiers than the message of the default locale. Each specifier counts with the position of the value it takes, so `%s killed %s` and `%2$s убит игроком %1$s` fill the same.
 
 A key may be a message and the prefix of other keys at once, as Minecraft's own `item.minecraft.potion` and `item.minecraft.potion.effect.water` are.
