@@ -65,6 +65,20 @@ The source downloads the product's bundles for the enabled locales, their base l
 
 When the server cannot be reached later, Semantica keeps the bundles it has and reports a `source` issue.
 
+By default the source reads the folder `semantica-cli bundle` writes, published as it is: `manifest.json` and `<product>/<locale>.json`. A file depot that serves files only by their digest and gives the manifest a moving name is read with `BundleLayout.digests`:
+
+```java
+import me.whereareiam.semantica.source.http.BundleLayout;
+
+HttpSource bundles = HttpSource.builder(URI.create("https://files.oraylen.com/translations/"))
+        .product("intercept")
+        .layout(BundleLayout.digests("@manifest"))
+        .cache(dataFolder.resolve("cache/translations"))
+        .build();
+```
+
+The manifest is then read at `@manifest` below the base, following a redirect, and each bundle at `sha256-<hash>/<locale>.json` with the hash the manifest lists for it. Bundles are checked against that hash and polled as before, and the cache keeps the same files in either layout.
+
 ## Layers of plugins
 
 A product that loads add-ons of its own can give each add-on an owned layer, removed with the add-on:

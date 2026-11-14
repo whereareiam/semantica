@@ -102,9 +102,16 @@ A bundle holds only the messages of its own locale; falling back happens in the 
 
 ## Reading bundles
 
-A product is configured with the address of the bundles, its product name, the locales it enables and optionally the key prefixes it keeps. It:
+A product is configured with the address of the bundles, its product name, the locales it enables and optionally the key prefixes it keeps. The bundles are published in one of two layouts below that address:
 
-1. reads `manifest.json`;
+| Layout | Manifest | Bundle |
+| --- | --- | --- |
+| By path, the default | `manifest.json` | `<product>/<locale>.json`, the folder the CI writes |
+| By digest | a name of its own, such as `@manifest`, which may answer with a redirect | `sha256-<hash>/<locale>.json`, where `<hash>` is the bundle's hash in the manifest |
+
+The layout by digest suits a file depot that serves files only by their digest and gives the manifest a moving name. A reader that uses it refuses a hash that is not 64 lowercase hex digits instead of asking for it. Either way the product:
+
+1. reads the manifest;
 2. wants the bundles of its enabled locales, of each one's base language (`pt` for `pt-BR`), of the default locale and of the root locale (`und`), where the manifest has them;
 3. downloads a wanted bundle only when its hash differs from the one it holds, and uses it only when the SHA-256 of the downloaded bytes equals the manifest's hash;
 4. keeps the bundle it held, and reports a `source` issue, when a download fails or does not match;
