@@ -16,7 +16,8 @@ The organisation's CI checks every change and builds bundles: one file per produ
 translations/
   semantica.json
   en/
-    website/ dashboard/ launcher/ email/
+    web/website/ web/dashboard/         grouped by web, which adds no key segment
+    launcher/ email/
     game/<topic>/                       shared by every realm: account, chat, economy
     realm/<realm>/common/...            one realm: create, vanilla
     realm/<realm>/mode/<mode>/...       a mode inside its realm: bedwars, skywars
@@ -29,6 +30,7 @@ The locale folders follow [Files](../files/index.md): a file's path is the prefi
 ```json
 {
   "defaultLocale": "en",
+  "grouping": ["web"],
   "markup": {
     "game":  { "format": "adventure" },
     "realm": { "format": "adventure", "allow": ["hover"] },
@@ -46,6 +48,7 @@ The locale folders follow [Files](../files/index.md): a file's path is the prefi
 | Field | Meaning |
 | --- | --- |
 | `defaultLocale` | The locale every key exists in. |
+| `grouping` | Folders that only group other folders and add no key segment, by their path inside a locale folder, such as `web` or `game/extras` (see [Files](../files/index.md)). With `web`, `en/web/website/forum.json` holds `website.forum.*`. Optional; an entry that is no such path is an error in `semantica.json`. |
 | `products` | Each product and the key prefixes its bundles carry. A prefix takes whole segments: `realm.vanilla.common` takes `realm.vanilla.common.join.title`, not `realm.vanilla.commons`. A key no product names a prefix of is a `source` issue, since no bundle would carry it. |
 | `markup` | The text format of the keys below a prefix, and so which markup is checked. Where several prefixes match a key, the longest wins. Keys below no prefix are not checked for markup. |
 | `markup.<prefix>.format` | `adventure` (MiniMessage), or `minecraft`: plain sentences that a launcher writes into Minecraft's `lang/<locale>.json`, as described below. |
