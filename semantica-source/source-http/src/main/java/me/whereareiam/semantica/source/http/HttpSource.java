@@ -35,6 +35,9 @@ import java.util.concurrent.TimeUnit;
  * and the base language of each locale. A bundle is downloaded again only when its hash in the manifest changed,
  * and its bytes must match that hash. When watched, the source polls the manifest and reports a change when its revision changes.</p>
  *
+ * <p>Those are the addresses of the default {@link BundleLayout#paths()}; a file depot that serves bundles by their
+ * digest is read with {@link BundleLayout#digests(String)}.</p>
+ *
  * <p>With a cache folder, the source keeps the last bundles on disk and starts from them when the server cannot
  * be reached.</p>
  *
@@ -56,6 +59,7 @@ public final class HttpSource implements Source {
 	private final String product;
 	private final List<KeyPrefix> prefixes;
 	private final Set<Locale> locales;
+	private final BundleLayout layout;
 	private final Duration interval;
 	private final Duration timeout;
 	private final Path cache;
@@ -70,6 +74,7 @@ public final class HttpSource implements Source {
 		this.product = builder.product;
 		this.prefixes = List.copyOf(builder.prefixes);
 		this.locales = builder.locales == null ? null : Set.copyOf(builder.locales);
+		this.layout = builder.layout;
 		this.interval = builder.interval;
 		this.timeout = builder.timeout;
 		this.cache = builder.cache;
@@ -100,7 +105,7 @@ public final class HttpSource implements Source {
 		synchronized (lock) {
 			Manifest current;
 			try {
-				current = Manifest.read(get("manifest.json"));
+				current = Manifest.read(get(layout.manifest()));
 			} catch (IOException exception) {
 				if (manifest == null && cache != null && Files.exists(cache.resolve("manifest.json"))) {
 					LOGGER.log(System.Logger.Level.WARNING, "Cannot reach " + base + ", starting from the cached bundles: " + exception.getMessage());
@@ -125,7 +130,7 @@ public final class HttpSource implements Source {
 				}
 
 				try {
-					byte[] bytes = get(Manifest.path(product, locale));
+					byte[] bytes = get(layout.bundle(product, locale, hash));
 					String actual = Bundle.hash(bytes);
 					if (!actual.equals(hash))
 						throw new IOException("Its SHA-256 is " + actual + ", but the manifest says " + hash);
@@ -154,7 +159,7 @@ public final class HttpSource implements Source {
 
 		poller.scheduleWithFixedDelay(() -> {
 			try {
-				Manifest current = Manifest.read(get("manifest.json"));
+				Manifest current = Manifest.read(get(layout.manifest()));
 				String known;
 				synchronized (lock) {
 					known = manifest != null ? manifest.getRevision() : null;
@@ -267,6 +272,7 @@ public final class HttpSource implements Source {
 		private String product;
 		private final List<KeyPrefix> prefixes = new ArrayList<>();
 		private Set<Locale> locales;
+		private BundleLayout layout = BundleLayout.paths();
 		private Duration interval = Duration.ofMinutes(5);
 		private Duration timeout = Duration.ofSeconds(15);
 		private Path cache;
@@ -311,6 +317,18 @@ public final class HttpSource implements Source {
 		 */
 		public @NotNull Builder locales(@NotNull Set<Locale> locales) {
 			this.locales = Set.copyOf(locales);
+			return this;
+		}
+
+		/**
+		 * Sets where the manifest and the bundles are below the base address. Defaults to
+		 * {@link BundleLayout#paths()}: {@code manifest.json} and {@code <product>/<locale>.json}.
+		 *
+		 * @param layout the layout, such as {@code BundleLayout.digests("@manifest")} for a file depot
+		 * @return this builder
+		 */
+		public @NotNull Builder layout(@NotNull BundleLayout layout) {
+			this.layout = Objects.requireNonNull(layout, "layout");
 			return this;
 		}
 

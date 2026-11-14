@@ -31,7 +31,7 @@ When changing behavior:
 - `semantica-source/source-file` (project `:source-file`)
   `FileSource.of(Path, Configura)`: the server's `languages` folder, one folder per locale, paths as key prefixes, watching. Plugins write their defaults into that folder themselves (Configura defaults providers); Semantica only reads it.
 - `semantica-source/source-http` (project `:source-http`)
-  `HttpSource`: an organisation's bundles by product, key prefixes and locales, polled through `manifest.json`; `Manifest` and `Bundle`, also written by `semantica-cli`.
+  `HttpSource`: an organisation's bundles by product, key prefixes and locales, polled through `manifest.json`; `Manifest` and `Bundle`, also written by `semantica-cli`; `BundleLayout`, by path (the default) or by digest for a file depot.
 - `semantica-format/common` (project `:semantica-format:common`, artifact `format-common`)
   `Renderer` and `PlainRenderer`. Depends on the api only.
 - `semantica-format/type/format-adventure/common` (project `:format-adventure-common`)
@@ -73,7 +73,7 @@ When changing behavior:
 
 ### API Surfaces
 
-- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `HttpSource`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `AdventureTags`, `AdventureTranslator`, `TextArgument`; `MemorySource`, `IssueAssert`).
+- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `HttpSource`, `BundleLayout`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `AdventureTags`, `AdventureTranslator`, `TextArgument`; `MemorySource`, `IssueAssert`).
 - `CatalogBuilder`, `MessageResolver`, `ValueFormatter` and the engine's checks are public for packaging only; projects do not call them.
 - Public API changes are compatibility-sensitive. Public API code has complete Javadocs.
 
