@@ -45,7 +45,7 @@ When changing behavior:
 - `semantica-gradle`
   The Gradle plugin `me.whereareiam.semantica`: `translationsExport` runs a product's `TranslationDefaults` (in `source-file`) on its runtime classpath through `DefaultsExport` and writes `translations/<locale>/`; `translationsCheck`, part of `check`, fails when the committed files differ. Published as `pluginMaven` with its marker.
 - `semantica-cli`
-  `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json` (`products` and `markup` by key prefix, the longest markup prefix wins; `adventure` or `minecraft`, checked by `MinecraftCheck`). Published with a jar of all dependencies (classifier `all`).
+  `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json` (`products` and `markup` by key prefix, the longest markup prefix wins; `adventure` or `minecraft`, checked by `MinecraftCheck`; `grouping` folders, which add no key segment). Published with a jar of all dependencies (classifier `all`).
 - `build-logic/`
   `module-java` (group `me.whereareiam.semantica`, Java 21 toolchain, Lombok, JetBrains annotations, JUnit, sources and Javadoc jars), `module-api` (`module-java` plus publication, for `semantica-api`), `packaging-publication` (Maven publication through the toolkit).
 - `docs/content/`

@@ -47,6 +47,9 @@ import java.util.stream.Stream;
  * <p>A folder that belongs to one owner among several, such as an add-on's beside its host's, can put a key
  * prefix before every key it reads ({@link Builder#prefix(String)}), so two folders with the same files do not
  * write the same keys.</p>
+ *
+ * <p>A folder that only groups other folders adds no key segment ({@link Builder#grouping(String...)}): with
+ * {@code web} grouping, {@code en/web/website/forum.json} holds {@code website.forum.*}.</p>
  */
 public final class FileSource implements Source {
 	/**
@@ -55,12 +58,14 @@ public final class FileSource implements Source {
 	public static final String ROOT_FOLDER = "all";
 
 	private static final Pattern KEY_PREFIX = Pattern.compile("[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*");
+	private static final Pattern FOLDER_PATH = Pattern.compile("[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*");
 
 	private final String name;
 	private final Path folder;
 	private final String rootFolder;
 	private final Set<String> skipped;
 	private final String prefix;
+	private final Set<String> grouping;
 	private final Function<InputStream, JsonNode> treeReader;
 
 	private FileSource(Builder builder) {
@@ -69,6 +74,7 @@ public final class FileSource implements Source {
 		this.rootFolder = builder.rootFolder;
 		this.skipped = Set.copyOf(builder.skipped);
 		this.prefix = builder.prefix;
+		this.grouping = Set.copyOf(builder.grouping);
 		this.treeReader = builder.configura::readNode;
 	}
 
@@ -122,7 +128,7 @@ public final class FileSource implements Source {
 
 	@Override
 	public @NotNull Content load() throws IOException {
-		TranslationFiles files = new TranslationFiles(name, prefix, treeReader);
+		TranslationFiles files = new TranslationFiles(name, prefix, grouping, treeReader);
 		loadFolder(files);
 
 		return files.build();
@@ -189,6 +195,7 @@ public final class FileSource implements Source {
 		private final Path folder;
 		private final Configura configura;
 		private final Set<String> skipped = new LinkedHashSet<>();
+		private final Set<String> grouping = new LinkedHashSet<>();
 		private String rootFolder = ROOT_FOLDER;
 		private String prefix = "";
 
@@ -241,6 +248,35 @@ public final class FileSource implements Source {
 				throw new IllegalArgumentException("'" + prefix + "' is no key prefix; write segments of letters, digits, _ and - separated by dots");
 
 			this.prefix = prefix;
+			return this;
+		}
+
+		/**
+		 * Names folders that only group other folders: they add no segment to the keys below them. With
+		 * {@code web}, the file {@code en/web/website/forum.json} holds {@code website.forum.*}, and
+		 * {@code en/web/common.json} holds {@code common.*}, as if it lay one level up. A path names one folder in
+		 * every locale folder, the root locale's included; with {@code game/extras}, {@code game} still adds its
+		 * segment. Two files that give the same key this way are reported like any other key written twice.
+		 *
+		 * <pre>{@code
+		 * FileSource.builder(repository, configura)
+		 *         .grouping("web", "game/extras")
+		 *         .build();
+		 * }</pre>
+		 *
+		 * @param folders paths relative to a locale folder, of segments of letters, digits, _ and - separated by
+		 *                {@code /}, such as {@code web} or {@code game/extras}
+		 * @return this builder
+		 * @throws IllegalArgumentException when a path is empty or not made of such segments
+		 */
+		public @NotNull Builder grouping(@NotNull String... folders) {
+			for (String folder : folders) {
+				Objects.requireNonNull(folder, "folder");
+				if (!FOLDER_PATH.matcher(folder).matches())
+					throw new IllegalArgumentException("'" + folder + "' is no folder path; write segments of letters, digits, _ and - separated by /");
+
+				grouping.add(folder);
+			}
 			return this;
 		}
 

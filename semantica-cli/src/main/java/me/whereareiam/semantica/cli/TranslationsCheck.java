@@ -35,7 +35,9 @@ final class TranslationsCheck {
 				.watch(false)
 				.issues(issue -> {
 				})
-				.layer(Layer.of(FileSource.of(folder, Configura.builder().build())));
+				.layer(Layer.of(FileSource.builder(folder, Configura.builder().build())
+						.grouping(settings.getGrouping().toArray(String[]::new))
+						.build()));
 
 		for (RepositorySettings.Markup markup : settings.getMarkup()) {
 			Predicate<String> keys = key -> settings.markup(key).filter(markup::equals).isPresent();
