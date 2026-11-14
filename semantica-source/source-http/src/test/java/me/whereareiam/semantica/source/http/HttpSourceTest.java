@@ -35,6 +35,7 @@ class HttpSourceTest {
 	private static final Locale DE = Locale.GERMAN;
 
 	private final Map<String, byte[]> files = new ConcurrentHashMap<>();
+	private final Map<String, String> names = new ConcurrentHashMap<>();
 	private final List<String> requests = new CopyOnWriteArrayList<>();
 	private HttpServer server;
 	private URI base;
@@ -48,6 +49,13 @@ class HttpSourceTest {
 		server.createContext("/bundles/", exchange -> {
 			String path = exchange.getRequestURI().getPath().substring("/bundles/".length());
 			requests.add(path);
+			if (names.containsKey(path)) {
+				exchange.getResponseHeaders().add("Location", names.get(path));
+				exchange.sendResponseHeaders(302, -1);
+				exchange.close();
+				return;
+			}
+
 			byte[] body = files.get(path);
 			exchange.sendResponseHeaders(body == null ? 404 : 200, body == null ? -1 : body.length);
 			if (body != null) try (OutputStream output = exchange.getResponseBody()) {
@@ -72,6 +80,19 @@ class HttpSourceTest {
 			hashes.put(locale, Bundle.hash(bytes));
 		});
 		files.put("manifest.json", new Manifest(revision, EN, Map.of("intercept", hashes)).write());
+	}
+
+	private void publishDigests(String revision, Map<Locale, Map<String, String>> intercept) {
+		Map<Locale, String> hashes = new java.util.HashMap<>();
+		intercept.forEach((locale, messages) -> {
+			byte[] bytes = Bundle.write(messages);
+			hashes.put(locale, Bundle.hash(bytes));
+			files.put("sha256-" + Bundle.hash(bytes) + "/" + locale.toLanguageTag() + ".json", bytes);
+		});
+
+		byte[] manifest = new Manifest(revision, EN, Map.of("intercept", hashes)).write();
+		files.put("sha256-" + Bundle.hash(manifest) + "/manifest.json", manifest);
+		names.put("@manifest", "sha256-" + Bundle.hash(manifest) + "/manifest.json");
 	}
 
 	private HttpSource.Builder source() {
@@ -152,6 +173,65 @@ class HttpSourceTest {
 			publish("2", Map.of(EN, Map.of("a", "2")));
 			assertTrue(changed.await(5, TimeUnit.SECONDS));
 		}
+	}
+
+	@Test
+	void readsBundlesByDigestWhenAskedTo() throws IOException {
+		publishDigests("1", Map.of(EN, Map.of("a", "1"), RU, Map.of("a", "один")));
+		String english = Bundle.hash(Bundle.write(Map.of("a", "1")));
+
+		Source.Content content = source().layout(BundleLayout.digests("@manifest")).locales(Set.of(EN)).build().load();
+
+		IssueAssert.assertNone(content.getIssues());
+		assertEquals("1", content.entries(EN).get("a").text());
+		assertEquals("@manifest", requests.getFirst());
+		assertTrue(requests.contains("sha256-" + english + "/en.json"), requests::toString);
+		assertTrue(requests.stream().noneMatch(path -> path.startsWith("intercept/") || path.endsWith("/ru.json")), requests::toString);
+	}
+
+	@Test
+	void rejectsADigestBundleThatDoesNotMatchItsHash() throws IOException {
+		publishDigests("1", Map.of(EN, Map.of("a", "1")));
+		files.put("sha256-" + Bundle.hash(Bundle.write(Map.of("a", "1"))) + "/en.json", Bundle.write(Map.of("a", "tampered")));
+
+		Source.Content content = source().layout(BundleLayout.digests("@manifest")).build().load();
+
+		IssueAssert.assertReported(content.getIssues(), Issue.Kind.SOURCE, null, EN);
+		assertTrue(content.entries(EN).isEmpty());
+	}
+
+	@Test
+	void refusesAHashThatIsNoAddressOfADigest() throws IOException {
+		byte[] manifest = new Manifest("1", EN, Map.of("intercept", Map.of(EN, "../intercept/en"))).write();
+		files.put("manifest.json", manifest);
+		requests.clear();
+
+		Source.Content content = source().layout(BundleLayout.digests("manifest.json")).build().load();
+
+		Issue issue = IssueAssert.assertReported(content.getIssues(), Issue.Kind.SOURCE, null, EN);
+		assertTrue(issue.getDetail().contains("is no SHA-256"), issue::getDetail);
+		assertEquals(List.of("manifest.json"), requests);
+	}
+
+	@Test
+	void cachesDigestBundlesAsByPath() throws IOException {
+		publishDigests("1", Map.of(EN, Map.of("a", "cached")));
+		source().layout(BundleLayout.digests("@manifest")).cache(cache).build().load();
+		server.stop(0);
+
+		assertTrue(cache.resolve("manifest.json").toFile().isFile());
+		assertTrue(cache.resolve("intercept/en.json").toFile().isFile());
+
+		Source.Content content = source().layout(BundleLayout.digests("@manifest")).cache(cache).timeout(Duration.ofSeconds(2)).build().load();
+		assertEquals("cached", content.entries(EN).get("a").text());
+	}
+
+	@Test
+	void takesOnlyARelativeAddressForTheManifest() {
+		assertThrows(IllegalArgumentException.class, () -> BundleLayout.digests("https://files.example/@manifest"));
+		assertThrows(IllegalArgumentException.class, () -> BundleLayout.digests("/translations/@manifest"));
+		assertThrows(IllegalArgumentException.class, () -> BundleLayout.digests(" "));
+		assertEquals("manifest.json", BundleLayout.paths().manifest());
 	}
 
 	@Test

@@ -11,7 +11,7 @@ description: How the repository is laid out, which module owns what, and how a t
 | `semantica-common` | `semantica-common/` | `Semantica` and the engine: building catalogs, checks, resolution, formatting. Uses ICU4J. |
 | `syntax-icu` | `semantica-syntax/syntax-icu/` | `IcuSyntax`, the parser of ICU MessageFormat with references. Depends on the api only. |
 | `source-file` | `semantica-source/source-file/` | `FileSource`: a folder on disk, watched. Reads through Configura 2.1.0. `TranslationDefaults` and `DefaultsExport`, which the Gradle plugin runs. |
-| `source-http` | `semantica-source/source-http/` | `HttpSource`, and the `Manifest` and `Bundle` formats it reads and `semantica-cli` writes. Uses Jackson. |
+| `source-http` | `semantica-source/source-http/` | `HttpSource`, the `Manifest` and `Bundle` formats it reads and `semantica-cli` writes, and the `BundleLayout` it finds them by. Uses Jackson. |
 | `:semantica-format:common` (artifact `format-common`) | `semantica-format/common/` | `Renderer` and `PlainRenderer`. Depends on the api only. |
 | `format-adventure-common` | `semantica-format/type/format-adventure/common/` | `TagPolicy`, `MarkupCheck` (its logic, given a `MiniMessageTags`), `MiniMessageTags`, `MinecraftLocales`. No Adventure types. |
 | `format-adventure-v4` | `semantica-format/type/format-adventure/adventure-v4/` | `AdventureRenderer`, `AdventureTags`, `AdventureTranslator` (with `AuthorityLookup` for the authority), `TextArgument` for Adventure 4.25, `compileOnly`. |
