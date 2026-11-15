@@ -2,6 +2,7 @@ package me.whereareiam.semantica.common;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import me.whereareiam.semantica.Content;
 import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
@@ -9,6 +10,7 @@ import me.whereareiam.semantica.common.catalog.CatalogBuilder;
 import me.whereareiam.semantica.common.check.ArgumentCheck;
 import me.whereareiam.semantica.common.check.PluralFormCheck;
 import me.whereareiam.semantica.common.check.UnknownKeyCheck;
+import me.whereareiam.semantica.common.resolution.ContentParser;
 import me.whereareiam.semantica.common.resolution.MessageResolver;
 import me.whereareiam.semantica.common.resolution.ValueFormatter;
 import me.whereareiam.semantica.issue.Check;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -56,10 +59,12 @@ import java.util.function.Consumer;
 public final class Semantica implements AutoCloseable {
 	private static final System.Logger LOGGER = System.getLogger("Semantica");
 	private static final int REPORTED_LIMIT = 10_000;
+	private static final int CONTENT_LIMIT = 4_096;
 
 	private final LocaleChain chain;
 	private final CatalogBuilder catalogBuilder;
 	private final MessageResolver resolver;
+	private final ContentParser contents;
 	private final Consumer<Issue> issueHandler;
 	private final boolean watch;
 
@@ -77,6 +82,7 @@ public final class Semantica implements AutoCloseable {
 		this.chain = chain;
 		this.catalogBuilder = new CatalogBuilder(builder.syntax, chain, builder.maxDepth);
 		this.resolver = new MessageResolver(new ValueFormatter(builder.clock), builder.maxDepth, builder.maxLength);
+		this.contents = new ContentParser(builder.syntax, CONTENT_LIMIT);
 		this.issueHandler = builder.issueHandler;
 		this.watch = builder.watch;
 		this.catalog = Catalog.empty(chain.getDefaultLocale());
@@ -119,6 +125,54 @@ public final class Semantica implements AutoCloseable {
 		Catalog current = catalog;
 
 		return resolver.resolve(current, message, chain.resolve(locales), this::report);
+	}
+
+	/**
+	 * Resolves a content written in a config for several wanted locales. Its references follow the locale chain and
+	 * see its values; its numbers and plural forms follow the first locale. The content is parsed the first time it is
+	 * resolved and kept by its text.
+	 *
+	 * <pre>{@code
+	 * ResolvedMessage welcome = semantica.resolve(announcement, Map.of("player", name), List.of(locale));
+	 * }</pre>
+	 *
+	 * @param content the content
+	 * @param values  the values of its arguments, by name
+	 * @param locales the locales asked for, the most wanted first; may be empty for the default locale
+	 * @return the resolved message; when the content is not valid in the syntax, a message holding its source
+	 */
+	public @NotNull ResolvedMessage resolve(@NotNull Content content, @NotNull Map<String, ?> values, @NotNull List<Locale> locales) {
+		Objects.requireNonNull(content, "content");
+		ContentParser.Parsed parsed = contents.parse(content);
+		String source = content.getSource();
+
+		if (parsed.message() == null) {
+			report(new Issue(Issue.Kind.SYNTAX, source, null, MessageResolver.CONTENT_LAYER, null, parsed.error()));
+			return new ResolvedMessage(source, Locale.ROOT, List.of(new ResolvedMessage.Literal(source)), false);
+		}
+
+		Map<String, Object> given = Collections.unmodifiableMap(values);
+		return resolver.resolve(catalog, source, parsed.message(), given, chain.resolve(locales), this::report);
+	}
+
+	/**
+	 * Checks a content written in a config, such as when a plugin loads its configs: whether it is valid in the syntax
+	 * and whether the default or root locale has every key it references. The plugin reports the issues with the file
+	 * and the key it read the content from.
+	 *
+	 * @param content the content
+	 * @return its issues, empty when it is fine
+	 */
+	public @NotNull List<Issue> check(@NotNull Content content) {
+		ContentParser.Parsed parsed = contents.parse(Objects.requireNonNull(content, "content"));
+		if (parsed.message() == null)
+			return List.of(new Issue(Issue.Kind.SYNTAX, null, null, MessageResolver.CONTENT_LAYER, null, parsed.error()));
+
+		return parsed.message().references().stream()
+				.filter(key -> !has(key))
+				.map(key -> new Issue(Issue.Kind.MISSING_REFERENCE, null, null, MessageResolver.CONTENT_LAYER, null,
+						"No message of the default locale has '" + key + "'"))
+				.toList();
 	}
 
 	/**
