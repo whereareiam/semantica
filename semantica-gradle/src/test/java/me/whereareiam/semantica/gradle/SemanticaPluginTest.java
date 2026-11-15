@@ -20,9 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Applies the plugin to a small product whose texts are a Configura defaults provider, as Identica's are.
+ * Applies the plugin to a small product whose texts are declared on a {@code @Messages} interface.
  */
 class SemanticaPluginTest {
+	private static final String MESSAGES = "src/main/java/com/example/shop/ShopMessages.java";
+
 	@TempDir
 	Path project;
 
@@ -41,7 +43,7 @@ class SemanticaPluginTest {
 
 	@BeforeEach
 	void writeProduct() throws IOException {
-		String classpath = Arrays.stream(System.getProperty("semantica.defaultsClasspath").split(File.pathSeparator))
+		String classpath = Arrays.stream(System.getProperty("semantica.processorClasspath").split(File.pathSeparator))
 				.map(path -> "\"" + path.replace("\\", "\\\\") + "\"")
 				.collect(Collectors.joining(", "));
 
@@ -53,72 +55,53 @@ class SemanticaPluginTest {
 				}
 
 				dependencies {
-					implementation(files(%s))
-				}
-
-				semantica {
-					defaults("com.example.shop.ShopDefaults")
+					compileOnly(files(%1$s))
+					annotationProcessor(files(%1$s))
 				}
 				""".formatted(classpath));
-		write("src/main/java/com/example/shop/Messages.java", """
+		write(MESSAGES, """
 				package com.example.shop;
 
-				import java.util.List;
+				import me.whereareiam.semantica.Message;
+				import me.whereareiam.semantica.declaration.Default;
+				import me.whereareiam.semantica.declaration.Messages;
 
-				public class Messages {
-					public String title;
-					public List<String> lore;
-					public int cooldown;
-				}
-				""");
-		write("src/main/java/com/example/shop/MessagesDefaults.java", """
-				package com.example.shop;
+				@Messages("shop")
+				public interface ShopMessages {
+					@Default("<gold>Shop</gold>")
+					Message title();
 
-				import me.whereareiam.configura.merge.defaults.DefaultsProvider;
-
-				import java.util.List;
-
-				public class MessagesDefaults implements DefaultsProvider<Messages> {
-					@Override
-					public Messages supply(Messages messages) {
-						messages.title = "<gold>Shop</gold>";
-						messages.lore = List.of("Buy things", "Cheap {price, number}");
-						messages.cooldown = 30;
-						return messages;
-					}
-				}
-				""");
-		write("src/main/java/com/example/shop/ShopDefaults.java", """
-				package com.example.shop;
-
-				import com.fasterxml.jackson.databind.JsonNode;
-				import me.whereareiam.configura.Configura;
-				import me.whereareiam.semantica.source.file.TranslationDefaults;
-
-				import java.util.Map;
-
-				public final class ShopDefaults implements TranslationDefaults {
-					@Override
-					public Map<String, JsonNode> files() {
-						Configura configura = Configura.builder().build();
-						return Map.of("shop", configura.mapper().valueToTree(new MessagesDefaults().supply(new Messages())));
-					}
+					@Default({"Buy things", "Cheap {price, number}"})
+					Message lore(int price);
 				}
 				""");
 	}
 
 	@Test
-	void exportsTheDefaultsAsTheSourceForTranslators() throws IOException {
+	void exportsTheDeclaredDefaultsAsTheSourceForTranslators() throws IOException {
 		BuildResult result = gradle("translationsExport").build();
 
+		assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava").getOutcome());
 		assertEquals(TaskOutcome.SUCCESS, result.task(":translationsExport").getOutcome());
 		assertEquals("""
 				{
-				  "title" : "<gold>Shop</gold>",
-				  "lore" : [ "Buy things", "Cheap {price, number}" ]
+				  "title": "<gold>Shop</gold>",
+				  "lore": [
+				    "Buy things",
+				    "Cheap {price, number}"
+				  ]
 				}
 				""", Files.readString(project.resolve("translations/en/shop.json")));
-		assertTrue(result.getOutput().contains("left out shop.cooldown"), result.getOutput());
+	}
+
+	@Test
+	void writesTheLocaleOfTheExtension() throws IOException {
+		write("build.gradle.kts", Files.readString(project.resolve("build.gradle.kts")) + "\nsemantica {\n\tlocale.set(\"de\")\n}\n");
+
+		gradle("translationsExport").build();
+
+		assertTrue(Files.exists(project.resolve("build/classes/java/main/META-INF/semantica/de/shop.json")));
+		assertTrue(Files.exists(project.resolve("translations/de/shop.json")));
 	}
 
 	@Test
@@ -133,8 +116,7 @@ class SemanticaPluginTest {
 	@Test
 	void checkFailsWhenTheDefaultsChanged() throws IOException {
 		gradle("translationsExport").build();
-		write("src/main/java/com/example/shop/MessagesDefaults.java", Files.readString(project.resolve("src/main/java/com/example/shop/MessagesDefaults.java"))
-				.replace("<gold>Shop</gold>", "<gold>Market</gold>"));
+		write(MESSAGES, Files.readString(project.resolve(MESSAGES)).replace("<gold>Shop</gold>", "<gold>Market</gold>"));
 
 		BuildResult result = gradle("check").buildAndFail();
 
@@ -143,12 +125,12 @@ class SemanticaPluginTest {
 	}
 
 	@Test
-	void exportReplacesFilesThatAreNoLongerExported() throws IOException {
+	void exportReplacesFilesThatAreNoLongerDeclared() throws IOException {
 		write("translations/en/old.json", "{}");
 		write("translations/de/shop.json", "{\"title\": \"Laden\"}");
 
 		BuildResult failed = gradle("translationsCheck").buildAndFail();
-		assertTrue(failed.getOutput().contains("old.json is no longer exported"), failed.getOutput());
+		assertTrue(failed.getOutput().contains("old.json is no longer declared"), failed.getOutput());
 		assertTrue(failed.getOutput().contains("shop.json is missing"), failed.getOutput());
 
 		gradle("translationsExport").build();
@@ -156,5 +138,14 @@ class SemanticaPluginTest {
 		assertFalse(Files.exists(project.resolve("translations/en/old.json")));
 		assertTrue(Files.exists(project.resolve("translations/de/shop.json")));
 		gradle("translationsCheck").build();
+	}
+
+	@Test
+	void failsTheBuildOnADefaultThatDoesNotFitItsMethod() throws IOException {
+		write(MESSAGES, Files.readString(project.resolve(MESSAGES)).replace("Cheap {price, number}", "Cheap {cost}"));
+
+		BuildResult result = gradle("compileJava").buildAndFail();
+
+		assertTrue(result.getOutput().contains("{cost} has no parameter"), result.getOutput());
 	}
 }
