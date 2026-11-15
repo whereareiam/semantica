@@ -15,14 +15,15 @@ Semantica is published to the [public Maven registry](https://registry.wherearei
 | --- | --- |
 | `semantica-common` | `Semantica`, the instance; brings `semantica-api` (`Message`, `Layer`, `Issue`, ...) |
 | `syntax-icu` | `IcuSyntax`, the message syntax |
-| `source-file` | `FileSource`; see [Layers and sources](./layers/index.md) |
+| `source-file` | `FileSource` and `ClasspathSource`; see [Layers and sources](./layers/index.md) |
+| `semantica-processor` | the annotation processor of declared messages; see [Declaring messages](./messages/index.md) |
 | `source-http` | `HttpSource`; see [Layers and sources](./layers/index.md) |
 | `format-common` | `Renderer` and `PlainRenderer`, for plain text in logs |
 | `format-adventure-v5` | Adventure 5.2 (Paper, Velocity); see [Adventure](./adventure/index.md) |
 | `format-adventure-v4` | Adventure 4.25 (BungeeCord, Spigot); see [Adventure](./adventure/index.md) |
 | `semantica-testing` | `MemorySource`, `IssueAssert`; see [Testing](./testing/index.md) |
 | `semantica-cli` | the command a translations repository's CI runs; see [Translations repository](./repository/index.md) |
-| `semantica-gradle` | the Gradle plugin `me.whereareiam.semantica`, which exports a product's defaults for translators; see [Exporting defaults](./gradle/index.md) |
+| `semantica-gradle` | the Gradle plugin `me.whereareiam.semantica`, which exports a product's declared defaults for translators; see [Exporting defaults](./gradle/index.md) |
 
 ```kotlin
 repositories {
@@ -30,12 +31,12 @@ repositories {
 }
 
 dependencies {
-    implementation("me.whereareiam.semantica:semantica-common:0.1.0")
-    implementation("me.whereareiam.semantica:syntax-icu:0.1.0")
-    implementation("me.whereareiam.semantica:source-file:0.1.0")
-    implementation("me.whereareiam.semantica:format-adventure-v5:0.1.0")
+    implementation("me.whereareiam.semantica:semantica-common:0.2.0")
+    implementation("me.whereareiam.semantica:syntax-icu:0.2.0")
+    implementation("me.whereareiam.semantica:source-file:0.2.0")
+    implementation("me.whereareiam.semantica:format-adventure-v5:0.2.0")
 
-    testImplementation("me.whereareiam.semantica:semantica-testing:0.1.0")
+    testImplementation("me.whereareiam.semantica:semantica-testing:0.2.0")
 }
 ```
 
@@ -58,7 +59,7 @@ plugins/Shop/languages/
 }
 ```
 
-The plugin writes its English defaults into `languages/en/` itself, such as through Configura's defaults providers, so administrators find every text where they change it. `en/shop.json` holds the keys `shop.bought` and `shop.empty`.
+`en/shop.json` holds the keys `shop.bought` and `shop.empty`. A plugin that [declares its messages](./messages/index.md) in code ships their English defaults in its jar and reads them with `ClasspathSource` below this folder, so an administrator's file only holds what they changed.
 
 ## Build the instance
 

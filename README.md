@@ -33,10 +33,10 @@ repositories {
 }
 
 dependencies {
-    implementation("me.whereareiam.semantica:semantica-common:0.1.0")
-    implementation("me.whereareiam.semantica:syntax-icu:0.1.0")
-    implementation("me.whereareiam.semantica:source-file:0.1.0")
-    implementation("me.whereareiam.semantica:format-adventure-v5:0.1.0")
+    implementation("me.whereareiam.semantica:semantica-common:0.2.0")
+    implementation("me.whereareiam.semantica:syntax-icu:0.2.0")
+    implementation("me.whereareiam.semantica:source-file:0.2.0")
+    implementation("me.whereareiam.semantica:format-adventure-v5:0.2.0")
 }
 ```
 

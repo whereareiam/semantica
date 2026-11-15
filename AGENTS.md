@@ -8,7 +8,8 @@ Semantica is platform-agnostic: no players, audiences, interactions, plugin regi
 
 When changing behavior:
 
-- values a program gives are never read as markup or as part of a message; a format inserts them as data
+- values a program gives are never read as markup or as part of a message; a format inserts them as data, and a `Rendering`'s placeholders apply to literal parts only
+- a declared message's key never appears as a string in a project's code: `@Messages` interfaces and `Content.of(Message)` name it
 - a lookup never throws because of translations: report an issue and fall back
 - every locale chain ends with the default locale, then the root locale (`Locale.ROOT`, `und`, the folder `all`): messages that are the same in every language; they never count as a translation in the checks, and their formats follow the locale asked for
 - the catalog is immutable and replaced in one write; nothing a lookup holds changes under it
@@ -23,13 +24,13 @@ When changing behavior:
 ### Module Map
 
 - `semantica-api`
-  Contracts and models: `Message`, `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
+  Contracts and models: `Message` (a key and its values), `Content` (a config's text, which may hold `{@key}` references), `declaration/` (`Messages`, `Default`, `Segment`, `KeySegment`, read by the processor), `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
 - `semantica-common`
-  `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`). ICU4J for CLDR plural rules and formats.
+  `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`, `ContentParser`, which keeps parsed contents by their text). ICU4J for CLDR plural rules and formats.
 - `semantica-syntax/syntax-icu` (project `:syntax-icu`)
   `IcuSyntax`: ICU MessageFormat with `{@key}` and `{@key name=other}` references. Depends on the api only.
 - `semantica-source/source-file` (project `:source-file`)
-  `FileSource.of(Path, Configura)`: the server's `languages` folder, one folder per locale, paths as key prefixes, watching. Plugins write their defaults into that folder themselves (Configura defaults providers); Semantica only reads it.
+  `FileSource.of(Path, Configura)`: the server's `languages` folder, one folder per locale, paths as key prefixes, watching. `ClasspathSource.of(Class, Configura)`: the default files under `META-INF/semantica/` of the jar or class folder that holds a class, the lowest layer.
 - `semantica-source/source-http` (project `:source-http`)
   `HttpSource`: an organisation's bundles by product, key prefixes and locales, polled through `manifest.json`; `Manifest` and `Bundle`, also written by `semantica-cli`; `BundleLayout`, by path (the default) or by digest for a file depot.
 - `semantica-format/common` (project `:semantica-format:common`, artifact `format-common`)
@@ -37,13 +38,15 @@ When changing behavior:
 - `semantica-format/type/format-adventure/common` (project `:format-adventure-common`)
   `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`: what both Adventure adapters share, without Adventure types.
 - `semantica-format/type/format-adventure/adventure-v4` (project `:format-adventure-v4`)
-  `AdventureRenderer`, `AdventureTags`, `AdventureTranslator`, `TextArgument` for Adventure 4.25 (BungeeCord and Spigot through adventure-platform 4.x), `compileOnly`. Same code as v5 against 4.x: virtual components for named arguments, every MiniMessage tag.
+  `AdventureRenderer` (with `Rendering`, a reader's placeholders for literal parts), `AdventureTags`, `AdventureTranslator`, `TextArgument` for Adventure 4.25 (BungeeCord and Spigot through adventure-platform 4.x), `compileOnly`. Same code as v5 against 4.x: virtual components for named arguments, every MiniMessage tag.
 - `semantica-format/type/format-adventure/adventure-v5` (project `:format-adventure-v5`)
   The same classes for Adventure 5.2 (Paper, Velocity, Arbor through its own NeoForge bridge), `compileOnly`. Never subclass `AbstractComponentRenderer` in either: 5.x added an abstract method to it.
+- `semantica-processor`
+  `MessagesProcessor`, the annotation processor of `@Messages` interfaces: checks each `@Default` with `IcuSyntax` against its method, writes `Generated<Interface>` (no reflection) and the default files `META-INF/semantica/<locale>/<prefix path>.json`; the locale is the option `semantica.locale`. Depends on the api and `syntax-icu`.
 - `semantica-testing`
   `MemorySource`, `IssueAssert`, and the conformance cases with `ConformanceTest`.
 - `semantica-gradle`
-  The Gradle plugin `me.whereareiam.semantica`: `translationsExport` runs a product's `TranslationDefaults` (in `source-file`) on its runtime classpath through `DefaultsExport` and writes `translations/<locale>/`; `translationsCheck`, part of `check`, fails when the committed files differ. Published as `pluginMaven` with its marker.
+  The Gradle plugin `me.whereareiam.semantica`: passes `semantica { locale }` to the processor; `translationsExport` copies the files it wrote into `translations/<locale>/`; `translationsCheck`, part of `check`, fails when the committed files differ. Published as `pluginMaven` with its marker.
 - `semantica-cli`
   `check` and `bundle` for a translations repository's CI; `RepositorySettings` reads `semantica.json` (`products` and `markup` by key prefix, the longest markup prefix wins; `adventure` or `minecraft`, checked by `MinecraftCheck`; `grouping` folders, which add no key segment). Published with a jar of all dependencies (classifier `all`).
 - `build-logic/`
@@ -55,7 +58,8 @@ When changing behavior:
 
 - For contracts and models, start in `semantica-api`.
 - For loading, merging and checks, start in `Semantica` and `CatalogBuilder`; for lookups, `MessageResolver`.
-- For the message syntax, `IcuParser`; for files, `FileSource` and `TranslationFiles`; for bundles, `HttpSource`.
+- For the message syntax, `IcuParser`; for files, `FileSource`, `ClasspathSource` and `TranslationFiles`; for bundles, `HttpSource`.
+- For declared messages, `MessagesProcessor`; for contents, `Semantica.resolve(Content, ...)` and `ContentParser`.
 - For rendering, the format modules; for the translations repository's CI, `semantica-cli`.
 - For what the format promises, `docs/content/format/` and the conformance cases.
 
@@ -73,8 +77,8 @@ When changing behavior:
 
 ### API Surfaces
 
-- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `HttpSource`, `BundleLayout`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `AdventureTags`, `AdventureTranslator`, `TextArgument`; `MemorySource`, `IssueAssert`).
-- `CatalogBuilder`, `MessageResolver`, `ValueFormatter` and the engine's checks are public for packaging only; projects do not call them.
+- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `ClasspathSource`, `MessagesProcessor` and its option, `HttpSource`, `BundleLayout`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `Rendering`, `AdventureTags`, `AdventureTranslator`, `TextArgument`; `MemorySource`, `IssueAssert`).
+- `CatalogBuilder`, `MessageResolver`, `ValueFormatter`, `ContentParser` and the engine's checks are public for packaging only; projects do not call them.
 - Public API changes are compatibility-sensitive. Public API code has complete Javadocs.
 
 ### Safety

@@ -14,7 +14,7 @@ Both bring `format-adventure-common`, which holds what does not depend on Advent
 
 ```kotlin
 dependencies {
-    implementation("me.whereareiam.semantica:format-adventure-v5:0.1.0")
+    implementation("me.whereareiam.semantica:format-adventure-v5:0.2.0")
 }
 ```
 
@@ -36,6 +36,22 @@ The project decides the locale: a player's client locale, a locale a player chos
 | a `Message` | its message, with its own MiniMessage |
 
 `renderLines` splits the message at its line breaks, written as `\n` or as a list of strings in the file; each line is read as MiniMessage of its own, so a tag ends at the end of its line.
+
+## Placeholders of a reader
+
+A `Rendering` adds what one reader needs to one rendering: functions over the text of literal parts, such as PlaceholderAPI's, and more tags, such as a placeholder plugin's. Both apply to what translators and administrators wrote, never to values: a `%player_name%` an administrator wrote is filled in, the same text a player typed into a value is shown as typed.
+
+```java
+Rendering rendering = Rendering.builder()
+        .text(text -> PlaceholderAPI.setPlaceholders(player, text))
+        .tags(Placeholder.unparsed("server", serverName))
+        .build();
+
+Component message = renderer.render(semantica.resolve(content, values, locales), rendering);
+List<Component> lore = renderer.renderLines(semantica.resolve(Message.of("shop.item.lore"), locale), rendering);
+```
+
+Text functions run in the order given, before the literal is read as MiniMessage, so what they return may hold tags. The extra tags are allowed beside the `TagPolicy`'s; the renderer's `check()` does not know them, so use them in [contents](../content/index.md), which the catalog's checks do not read.
 
 ## Allowed tags
 

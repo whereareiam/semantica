@@ -7,7 +7,7 @@ description: Test a product's translations and its use of Semantica.
 
 ```kotlin
 dependencies {
-    testImplementation("me.whereareiam.semantica:semantica-testing:0.1.0")
+    testImplementation("me.whereareiam.semantica:semantica-testing:0.2.0")
 }
 ```
 

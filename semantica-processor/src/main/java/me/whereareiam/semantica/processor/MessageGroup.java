@@ -4,10 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import java.util.List;
 
 /**
  * A {@code @Messages} interface or a group inside it, as the processor read it: the prefix of its keys and its
