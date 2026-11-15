@@ -11,7 +11,7 @@ An organisation keeps its own layer of translations in one repository: its own p
 
 ```shell
 curl -fsSLo semantica-cli.jar \
-  https://registry.whereareiam.me/maven/packages/me/whereareiam/semantica/semantica-cli/0.1.0/semantica-cli-0.1.0-all.jar
+  https://registry.whereareiam.me/maven/packages/me/whereareiam/semantica/semantica-cli/0.2.0/semantica-cli-0.2.0-all.jar
 
 java -jar semantica-cli.jar check translations
 java -jar semantica-cli.jar bundle translations dist --revision "$GITHUB_SHA"
@@ -61,7 +61,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - run: curl -fsSLo semantica-cli.jar https://registry.whereareiam.me/maven/packages/me/whereareiam/semantica/semantica-cli/0.1.0/semantica-cli-0.1.0-all.jar
+      - run: curl -fsSLo semantica-cli.jar https://registry.whereareiam.me/maven/packages/me/whereareiam/semantica/semantica-cli/0.2.0/semantica-cli-0.2.0-all.jar
       - run: java -jar semantica-cli.jar check .
       - if: github.event_name == 'push'
         run: java -jar semantica-cli.jar bundle . ../bundles

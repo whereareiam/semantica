@@ -49,6 +49,20 @@ FileSource repository = FileSource.builder(dataFolder.resolve("translations"), c
 
 The folder holds the plugin's own texts: the plugin writes its English defaults into `languages/en/`, such as through Configura's defaults providers, and administrators change them there or add other languages. Semantica only reads the folder.
 
+## The defaults in a jar
+
+`ClasspathSource` reads the default files the `semantica-processor` writes for a plugin's [declared messages](../messages/index.md), from `META-INF/semantica/` of the jar, or the folder of classes, that holds the class given:
+
+```java
+Semantica semantica = Semantica.builder()
+        .syntax(new IcuSyntax())
+        .layer(Layer.of(ClasspathSource.of(CommandMessages.class, configura), Layer.DEFAULTS))
+        .layer(Layer.of(FileSource.of(dataFolder.resolve("languages"), configura), Layer.OVERRIDES))
+        .build();
+```
+
+It reads nothing another jar on the same class loader carries, so an add-on reads only its own defaults. The folders and files follow the same layout as a languages folder, `all` included. The texts of a jar never change while it runs, so the source is not watched.
+
 ## An organisation's bundles
 
 `HttpSource` downloads the bundles an organisation's translations repository builds (see [Bundles](../../format/bundles/index.md)):

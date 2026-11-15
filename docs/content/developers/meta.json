@@ -8,6 +8,8 @@
     "index",
     "layers",
     "lookup",
+    "messages",
+    "content",
     "---Formats---",
     "adventure",
     "---Translators and CI---",
