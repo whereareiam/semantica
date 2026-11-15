@@ -35,6 +35,11 @@ import java.util.function.Consumer;
  * locale asked for first.</p>
  */
 public final class MessageResolver {
+	/**
+	 * The layer named in issues of a content written in a config.
+	 */
+	public static final String CONTENT_LAYER = "content";
+
 	private final ValueFormatter formatter;
 	private final int maxDepth;
 	private final int maxLength;
@@ -87,6 +92,38 @@ public final class MessageResolver {
 					"No locale of " + chain + " has this key"));
 		}
 		return new ResolvedMessage(message.getKey(), chain.getFirst(), List.of(new ResolvedMessage.Literal(message.getKey())), false);
+	}
+
+	/**
+	 * Resolves the message of a content, written in a config rather than a catalog. It resolves as a message of the
+	 * root locale: its references follow the chain, its numbers and plural forms the locale asked for first. Its source
+	 * stands for the key, in issues and in the result.
+	 *
+	 * @param catalog the catalog its references take messages from
+	 * @param source  the content as written
+	 * @param message the content as parsed
+	 * @param values  the values of its arguments, which its references see too
+	 * @param chain   the locales to try, in order
+	 * @param issues  receives what went wrong; the result is still usable
+	 * @return the resolved message; when it grows past a limit, a message holding the source
+	 */
+	public @NotNull ResolvedMessage resolve(
+			@NotNull Catalog catalog,
+			@NotNull String source,
+			@NotNull ParsedMessage message,
+			@NotNull Map<String, Object> values,
+			@NotNull List<Locale> chain,
+			@NotNull Consumer<Issue> issues
+	) {
+		Catalog.Entry entry = new Catalog.Entry(source, Locale.ROOT, source, message, CONTENT_LAYER, null);
+		Expansion expansion = new Expansion(catalog, chain, issues);
+		try {
+			expansion.message(entry, values, 0);
+			return new ResolvedMessage(source, Locale.ROOT, expansion.parts, true);
+		} catch (LimitExceeded exceeded) {
+			issues.accept(issue(exceeded.kind, source, entry, exceeded.getMessage()));
+			return new ResolvedMessage(source, Locale.ROOT, List.of(new ResolvedMessage.Literal(source)), false);
+		}
 	}
 
 	private static Issue issue(Issue.Kind kind, String key, Catalog.Entry entry, String detail) {
