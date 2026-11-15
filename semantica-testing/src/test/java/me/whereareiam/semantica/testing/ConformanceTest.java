@@ -2,7 +2,7 @@ package me.whereareiam.semantica.testing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.issue.Issue;
@@ -81,8 +81,8 @@ class ConformanceTest {
 		try (Semantica semantica = semantica(suite, reported)) {
 			reported.clear();
 
-			Text text = text(test.get("key").asText(), test.path("values"));
-			ResolvedMessage message = semantica.resolve(text, Locale.forLanguageTag(test.get("locale").asText()));
+			Message asked = message(test.get("key").asText(), test.path("values"));
+			ResolvedMessage message = semantica.resolve(asked, Locale.forLanguageTag(test.get("locale").asText()));
 			assertEquals(test.get("expected").asText(), message.plain());
 
 			if (test.has("resolvedLocale"))
@@ -125,12 +125,12 @@ class ConformanceTest {
 		return builder.build();
 	}
 
-	private static Text text(String key, JsonNode values) {
+	private static Message message(String key, JsonNode values) {
 		Map<String, Object> converted = new LinkedHashMap<>();
 		for (Map.Entry<String, JsonNode> field : values.properties())
 			converted.put(field.getKey(), value(field.getValue()));
 
-		return Text.of(key).with(converted);
+		return Message.of(key).with(converted);
 	}
 
 	private static Object value(JsonNode node) {
@@ -139,7 +139,7 @@ class ConformanceTest {
 		if (node.isBoolean()) return node.booleanValue();
 		if (node.isObject() && node.has("text")) {
 			JsonNode text = node.get("text");
-			return text(text.get("key").asText(), text.path("values"));
+			return message(text.get("key").asText(), text.path("values"));
 		}
 
 		return node.asText();

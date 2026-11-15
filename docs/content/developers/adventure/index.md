@@ -23,8 +23,8 @@ dependencies {
 ```java
 AdventureRenderer renderer = AdventureRenderer.of(TagPolicy.defaults());
 
-Component title = renderer.render(semantica.resolve(Text.of("shop.title"), locale));
-List<Component> lore = renderer.renderLines(semantica.resolve(Text.of("shop.item.lore").with("price", 20), locale));
+Component title = renderer.render(semantica.resolve(Message.of("shop.title"), locale));
+List<Component> lore = renderer.renderLines(semantica.resolve(Message.of("shop.item.lore").with("price", 20), locale));
 ```
 
 The project decides the locale: a player's client locale, a locale a player chose, or the server's. Most plugins send translatable components instead and let Adventure ask the translator in each player's locale; see below.
@@ -33,7 +33,7 @@ The project decides the locale: a player's client locale, a locale a player chos
 | --- | --- |
 | text, numbers, dates, booleans, enums | text, formatted, never read as MiniMessage |
 | a `Component` or any `ComponentLike` | the component as it is |
-| a `Text` | its message, with its own MiniMessage |
+| a `Message` | its message, with its own MiniMessage |
 
 `renderLines` splits the message at its line breaks, written as `\n` or as a list of strings in the file; each line is read as MiniMessage of its own, so a tag ends at the end of its line.
 
@@ -81,9 +81,9 @@ GlobalTranslator.translator().addSource(AdventureTranslator.authority(networkSem
 
 It is named `semantica:authority` (`AdventureTranslator.AUTHORITY`). Every other Semantica translator, in any plugin, looks for it among `GlobalTranslator`'s sources and returns `null` for the keys it can translate, so the authority's texts win; keys only a plugin has stay with that plugin. A translator looks again every five seconds (`AUTHORITY_INTERVAL`), so an authority added or removed later is noticed within that time.
 
-`TextArgument.of(name, value)` names an argument and keeps the value's type, so a number still chooses a plural form; it accepts anything `Text` does: text, numbers, dates, booleans, enums, components and nested texts. Other arguments, such as `Component.text("x")`, are numbered from `{0}`. Adventure's own `Argument.string(...)` is not read, since Adventure keeps its name private.
+`TextArgument.of(name, value)` names an argument and keeps the value's type, so a number still chooses a plural form; it accepts anything `Message` does: text, numbers, dates, booleans, enums, components and nested messages. Other arguments, such as `Component.text("x")`, are numbered from `{0}`. Adventure's own `Argument.string(...)` is not read, since Adventure keeps its name private.
 
-A translator reads `TextArgument`s made by any copy of Semantica, such as a plugin's arguments read by the network's authority in another class loader. It recognises them by Adventure's virtual components, the class's simple name `TextArgument` and the JDK's `Map.Entry`, so plugins may relocate Semantica as they like; only Adventure must be the server's own, unrelocated, as it is for any plugin that sends components. Values of JDK types (text, numbers, dates, booleans), enums and components cross between copies unchanged; a nested `Text` from another copy shows as its key and values, so pass nested texts only to your own translator.
+A translator reads `TextArgument`s made by any copy of Semantica, such as a plugin's arguments read by the network's authority in another class loader. It recognises them by Adventure's virtual components, the class's simple name `TextArgument` and the JDK's `Map.Entry`, so plugins may relocate Semantica as they like; only Adventure must be the server's own, unrelocated, as it is for any plugin that sends components. Values of JDK types (text, numbers, dates, booleans), enums and components cross between copies unchanged; a nested `Message` from another copy shows as its key and values, so pass nested messages only to your own translator.
 
 ## Minecraft's locale codes
 

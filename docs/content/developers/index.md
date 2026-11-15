@@ -13,7 +13,7 @@ Semantica is published to the [public Maven registry](https://registry.wherearei
 
 | Artifact | Holds |
 | --- | --- |
-| `semantica-common` | `Semantica`, the instance; brings `semantica-api` (`Text`, `Layer`, `Issue`, ...) |
+| `semantica-common` | `Semantica`, the instance; brings `semantica-api` (`Message`, `Layer`, `Issue`, ...) |
 | `syntax-icu` | `IcuSyntax`, the message syntax |
 | `source-file` | `FileSource`; see [Layers and sources](./layers/index.md) |
 | `source-http` | `HttpSource`; see [Layers and sources](./layers/index.md) |

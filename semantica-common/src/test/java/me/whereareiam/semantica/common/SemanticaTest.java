@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.common;
 
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.issue.Issue;
@@ -47,8 +47,8 @@ class SemanticaTest {
 				.layer(Layer.of(defaults))
 				.build();
 
-		assertEquals("default a", semantica.resolve(Text.of("a"), EN).plain());
-		assertEquals("override b", semantica.resolve(Text.of("b"), EN).plain());
+		assertEquals("default a", semantica.resolve(Message.of("a"), EN).plain());
+		assertEquals("override b", semantica.resolve(Message.of("b"), EN).plain());
 		assertEquals("overrides", semantica.getCatalog().entry(EN, "b").orElseThrow().layer());
 	}
 
@@ -62,7 +62,7 @@ class SemanticaTest {
 				.layer(Layer.of(overrides, Layer.OVERRIDES))
 				.build();
 
-		assertEquals("fine Ann", semantica.resolve(Text.of("a").with("name", "Ann"), EN).plain());
+		assertEquals("fine Ann", semantica.resolve(Message.of("a").with("name", "Ann"), EN).plain());
 		Issue issue = IssueAssert.assertReported(semantica.getCatalog(), Issue.Kind.SYNTAX, "a");
 		assertEquals("overrides", issue.getLayer());
 	}
@@ -99,7 +99,7 @@ class SemanticaTest {
 		semantica.replace("shop", Layer.owned("shop", new MemorySource("v2").put(EN, "shop.title", "Shop v2")));
 
 		assertEquals(1, seen.size());
-		assertEquals("Shop v2", semantica.resolve(Text.of("shop.title"), EN).plain());
+		assertEquals("Shop v2", semantica.resolve(Message.of("shop.title"), EN).plain());
 	}
 
 	@Test
@@ -110,12 +110,12 @@ class SemanticaTest {
 
 		source.put(EN, "a", "second").changed();
 
-		assertEquals("second", semantica.resolve(Text.of("a"), EN).plain());
+		assertEquals("second", semantica.resolve(Message.of("a"), EN).plain());
 		assertEquals("first", before.entry(EN, "a").orElseThrow().source());
 		semantica.close();
 
 		source.put(EN, "a", "third").changed();
-		assertEquals("second", semantica.resolve(Text.of("a"), EN).plain());
+		assertEquals("second", semantica.resolve(Message.of("a"), EN).plain());
 	}
 
 	@Test
@@ -138,7 +138,7 @@ class SemanticaTest {
 		failing.set(true);
 		semantica.reload();
 
-		assertEquals("kept", semantica.resolve(Text.of("a"), EN).plain());
+		assertEquals("kept", semantica.resolve(Message.of("a"), EN).plain());
 		IssueAssert.assertReported(issues, Issue.Kind.SOURCE, null, null);
 	}
 
@@ -155,8 +155,8 @@ class SemanticaTest {
 	@Test
 	void runtimeIssuesAreReportedOncePerCatalog() {
 		Semantica semantica = builder().build();
-		semantica.resolve(Text.of("nothing"), EN);
-		semantica.resolve(Text.of("nothing"), EN);
+		semantica.resolve(Message.of("nothing"), EN);
+		semantica.resolve(Message.of("nothing"), EN);
 
 		assertEquals(1, issues.stream().filter(issue -> issue.getKind() == Issue.Kind.MISSING_KEY).count());
 	}
@@ -172,7 +172,7 @@ class SemanticaTest {
 				.build();
 
 		assertEquals("Du hast ein Schwert gekauft",
-				semantica.resolve(Text.of("bought").with("item", Text.of("item.sword")), DE).plain());
+				semantica.resolve(Message.of("bought").with("item", Message.of("item.sword")), DE).plain());
 	}
 
 	@Test
@@ -185,9 +185,9 @@ class SemanticaTest {
 						.put(EN, "ago", "{when, time, relative}")))
 				.build();
 
-		assertEquals("November 8, 2026", semantica.resolve(Text.of("day").with("when", clock.instant()), EN).plain());
+		assertEquals("November 8, 2026", semantica.resolve(Message.of("day").with("when", clock.instant()), EN).plain());
 		assertEquals("3 hours ago",
-				semantica.resolve(Text.of("ago").with("when", clock.instant().minusSeconds(3 * 3600)), EN).plain());
+				semantica.resolve(Message.of("ago").with("when", clock.instant().minusSeconds(3 * 3600)), EN).plain());
 	}
 
 	@Test
@@ -200,7 +200,7 @@ class SemanticaTest {
 		};
 		Semantica semantica = builder().layer(Layer.of(new MemorySource("m").put(EN, "a", "<{thing}>"))).build();
 
-		var message = semantica.resolve(Text.of("a").with("thing", component), EN);
+		var message = semantica.resolve(Message.of("a").with("thing", component), EN);
 		assertEquals("<component>", message.plain());
 		assertSame(component, ((me.whereareiam.semantica.message.ResolvedMessage.Value) message.getParts().get(1)).value());
 	}

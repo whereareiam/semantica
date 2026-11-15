@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  *         .check(renderer.check())
  *         .build();
  *
- * Component message = renderer.render(semantica.resolve(Text.of("shop.title"), locale));
+ * Component message = renderer.render(semantica.resolve(Message.of("shop.title"), locale));
  * }</pre>
  */
 public final class AdventureRenderer implements Renderer<Component> {

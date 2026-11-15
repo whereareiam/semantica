@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  *
  * <pre>{@code
  * PlainRenderer plain = PlainRenderer.withoutTags();
- * logger.info(plain.render(semantica.resolve(Text.of("server.started"), Locale.ENGLISH)));
+ * logger.info(plain.render(semantica.resolve(Message.of("server.started"), Locale.ENGLISH)));
  * }</pre>
  */
 public final class PlainRenderer implements Renderer<String> {

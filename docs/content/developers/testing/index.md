@@ -24,7 +24,7 @@ Semantica semantica = Semantica.builder()
         .layer(Layer.of(source))
         .build();
 
-assertEquals("Вы купили 3 предмета", semantica.resolve(Text.of("shop.bought").with("count", 3), Locale.forLanguageTag("ru")).plain());
+assertEquals("Вы купили 3 предмета", semantica.resolve(Message.of("shop.bought").with("count", 3), Locale.forLanguageTag("ru")).plain());
 
 source.put(Locale.ENGLISH, "shop.bought", "Bought {count}").changed();   // a watching instance loads it again
 ```

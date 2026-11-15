@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.format.adventure.v5;
 
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
@@ -43,13 +43,13 @@ class AdventureRendererTest {
 		return PlainTextComponentSerializer.plainText().serialize(component);
 	}
 
-	private Component render(Text text, Locale locale) {
-		return renderer.render(semantica.resolve(text, locale));
+	private Component render(Message message, Locale locale) {
+		return renderer.render(semantica.resolve(message, locale));
 	}
 
 	@Test
 	void rendersMiniMessageInTheRequestedLocale() {
-		Component component = render(Text.of("greeting").with("name", "Ann"), RU);
+		Component component = render(Message.of("greeting").with("name", "Ann"), RU);
 
 		assertEquals("Привет, Ann!", plain(component));
 		assertEquals(NamedTextColor.RED, component.children().getFirst().color());
@@ -57,14 +57,14 @@ class AdventureRendererTest {
 
 	@Test
 	void neverReadsValuesAsMarkup() {
-		Component component = render(Text.of("greeting").with("name", "<red>evil</red> <click:run_command:/op me>x"), EN);
+		Component component = render(Message.of("greeting").with("name", "<red>evil</red> <click:run_command:/op me>x"), EN);
 
 		assertEquals("Hello, <red>evil</red> <click:run_command:/op me>x!", plain(component));
 	}
 
 	@Test
 	void insertsComponentsAsTheyAre() {
-		Component component = render(Text.of("greeting").with("name", Component.text("Ann", NamedTextColor.AQUA)), EN);
+		Component component = render(Message.of("greeting").with("name", Component.text("Ann", NamedTextColor.AQUA)), EN);
 
 		assertEquals("Hello, Ann!", plain(component));
 		assertTrue(component.toString().contains("aqua"), component::toString);
@@ -72,14 +72,14 @@ class AdventureRendererTest {
 
 	@Test
 	void showsDisallowedTagsAsWrittenAndReportsThem() {
-		assertEquals("<click:run_command:/spawn>Go to spawn</click>", plain(render(Text.of("spawn"), EN)));
+		assertEquals("<click:run_command:/spawn>Go to spawn</click>", plain(render(Message.of("spawn"), EN)));
 		IssueAssert.assertReported(semantica.getCatalog(), Issue.Kind.MARKUP, "spawn");
 	}
 
 	@Test
 	void appliesAllowedClicks() {
 		AdventureRenderer clicks = AdventureRenderer.of(TagPolicy.defaults().allow(TagPolicy.Group.CLICK));
-		Component component = clicks.render(semantica.resolve(Text.of("spawn"), EN));
+		Component component = clicks.render(semantica.resolve(Message.of("spawn"), EN));
 
 		assertEquals("Go to spawn", plain(component));
 		assertNotNull(component.children().isEmpty() ? component.clickEvent() : component.children().getFirst().clickEvent());
@@ -87,13 +87,13 @@ class AdventureRendererTest {
 
 	@Test
 	void appliesTheTagsOfAdventureFive() {
-		assertEquals("Deep", plain(render(Text.of("shadowed"), EN)));
+		assertEquals("Deep", plain(render(Message.of("shadowed"), EN)));
 		IssueAssert.assertNone(semantica.getCatalog().getIssues().stream().filter(issue -> "shadowed".equals(issue.getKey())).toList());
 	}
 
 	@Test
 	void splitsLinesForLore() {
-		List<Component> lines = renderer.renderLines(semantica.resolve(Text.of("lore").with("name", "Ann"), EN));
+		List<Component> lines = renderer.renderLines(semantica.resolve(Message.of("lore").with("name", "Ann"), EN));
 
 		assertEquals(2, lines.size());
 		assertEquals("First line", plain(lines.get(0)));
