@@ -33,6 +33,8 @@ import java.util.function.Predicate;
  *
  * Component message = renderer.render(semantica.resolve(Message.of("shop.title"), locale));
  * }</pre>
+ *
+ * <p>A {@link Rendering} adds what one reader needs, such as their placeholders, to the literal parts only.</p>
  */
 public final class AdventureRenderer implements Renderer<Component> {
 	private static final String PLACEHOLDER = "semantica-value-";
@@ -88,7 +90,19 @@ public final class AdventureRenderer implements Renderer<Component> {
 
 	@Override
 	public @NotNull Component render(@NotNull ResolvedMessage message) {
-		return render(message.getParts());
+		return render(message, Rendering.none());
+	}
+
+	/**
+	 * Renders a message with what one rendering adds, such as the reader's placeholders: its text function and its
+	 * tags apply to the literal parts only, never to values.
+	 *
+	 * @param message   the message
+	 * @param rendering what this rendering adds
+	 * @return the component
+	 */
+	public @NotNull Component render(@NotNull ResolvedMessage message, @NotNull Rendering rendering) {
+		return render(message.getParts(), Objects.requireNonNull(rendering, "rendering"));
 	}
 
 	/**
@@ -99,6 +113,18 @@ public final class AdventureRenderer implements Renderer<Component> {
 	 * @return one component per line
 	 */
 	public @NotNull List<Component> renderLines(@NotNull ResolvedMessage message) {
+		return renderLines(message, Rendering.none());
+	}
+
+	/**
+	 * Renders a message as separate lines with what one rendering adds, such as the reader's placeholders.
+	 *
+	 * @param message   the message
+	 * @param rendering what this rendering adds
+	 * @return one component per line
+	 */
+	public @NotNull List<Component> renderLines(@NotNull ResolvedMessage message, @NotNull Rendering rendering) {
+		Objects.requireNonNull(rendering, "rendering");
 		List<List<ResolvedMessage.Part>> lines = new ArrayList<>();
 		List<ResolvedMessage.Part> current = new ArrayList<>();
 		lines.add(current);
@@ -119,16 +145,16 @@ public final class AdventureRenderer implements Renderer<Component> {
 			}
 		}
 
-		return lines.stream().map(this::render).toList();
+		return lines.stream().map(line -> render(line, rendering)).toList();
 	}
 
-	private Component render(List<ResolvedMessage.Part> parts) {
+	private Component render(List<ResolvedMessage.Part> parts, Rendering rendering) {
 		StringBuilder template = new StringBuilder();
 		List<TagResolver> values = new ArrayList<>();
 
 		for (ResolvedMessage.Part part : parts) {
 			switch (part) {
-				case ResolvedMessage.Literal literal -> template.append(literal.text());
+				case ResolvedMessage.Literal literal -> template.append(rendering.getText().apply(literal.text()));
 				case ResolvedMessage.Value value -> {
 					String name = PLACEHOLDER + values.size();
 					values.add(Placeholder.component(name, component(value)));
@@ -137,6 +163,7 @@ public final class AdventureRenderer implements Renderer<Component> {
 			}
 		}
 
+		values.addAll(rendering.getTags());
 		return miniMessage.deserialize(template.toString(), TagResolver.resolver(values));
 	}
 
