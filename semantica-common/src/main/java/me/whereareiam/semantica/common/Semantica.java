@@ -2,7 +2,7 @@ package me.whereareiam.semantica.common;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.catalog.CatalogBuilder;
@@ -50,7 +50,7 @@ import java.util.function.Consumer;
  *         .layer(Layer.of(FileSource.of(dataFolder.resolve("languages"), configura)))
  *         .build();
  *
- * String line = semantica.resolve(Text.of("shop.bought").with("count", 3), Locale.forLanguageTag("ru")).plain();
+ * String line = semantica.resolve(Message.of("shop.bought").with("count", 3), Locale.forLanguageTag("ru")).plain();
  * }</pre>
  */
 public final class Semantica implements AutoCloseable {
@@ -97,28 +97,28 @@ public final class Semantica implements AutoCloseable {
 	}
 
 	/**
-	 * Resolves a text in a locale, falling back along the locale chain.
+	 * Resolves a message in a locale, falling back along the locale chain.
 	 *
-	 * @param text   the text
-	 * @param locale the locale asked for
+	 * @param message the message
+	 * @param locale  the locale asked for
 	 * @return the resolved message; when no locale of the chain has the key, a message holding the key
 	 */
-	public @NotNull ResolvedMessage resolve(@NotNull Text text, @NotNull Locale locale) {
-		return resolve(text, List.of(locale));
+	public @NotNull ResolvedMessage resolve(@NotNull Message message, @NotNull Locale locale) {
+		return resolve(message, List.of(locale));
 	}
 
 	/**
-	 * Resolves a text for several wanted locales, such as a user's chosen locale before their client's.
+	 * Resolves a message for several wanted locales, such as a user's chosen locale before their client's.
 	 *
-	 * @param text    the text
+	 * @param message the message
 	 * @param locales the locales asked for, the most wanted first; may be empty for the default locale
 	 * @return the resolved message; when no locale of the chain has the key, a message holding the key
 	 */
-	public @NotNull ResolvedMessage resolve(@NotNull Text text, @NotNull List<Locale> locales) {
-		Objects.requireNonNull(text, "text");
+	public @NotNull ResolvedMessage resolve(@NotNull Message message, @NotNull List<Locale> locales) {
+		Objects.requireNonNull(message, "message");
 		Catalog current = catalog;
 
-		return resolver.resolve(current, text, chain.resolve(locales), this::report);
+		return resolver.resolve(current, message, chain.resolve(locales), this::report);
 	}
 
 	/**

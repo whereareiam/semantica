@@ -7,7 +7,7 @@ description: How the repository is laid out, which module owns what, and how a t
 
 | Gradle project | Directory | Owns |
 | --- | --- | --- |
-| `semantica-api` | `semantica-api/` | The contracts and models: `Text`, `Catalog`, `Layer`, `Source`, `LocaleChain`, `ParsedMessage`, `ResolvedMessage`, `Syntax`, `Issue`, `Check`, `SyntaxException`. No dependencies beyond the JDK and annotations. |
+| `semantica-api` | `semantica-api/` | The contracts and models: `Message`, `Catalog`, `Layer`, `Source`, `LocaleChain`, `ParsedMessage`, `ResolvedMessage`, `Syntax`, `Issue`, `Check`, `SyntaxException`. No dependencies beyond the JDK and annotations. |
 | `semantica-common` | `semantica-common/` | `Semantica` and the engine: building catalogs, checks, resolution, formatting. Uses ICU4J. |
 | `syntax-icu` | `semantica-syntax/syntax-icu/` | `IcuSyntax`, the parser of ICU MessageFormat with references. Depends on the api only. |
 | `source-file` | `semantica-source/source-file/` | `FileSource`: a folder on disk, watched. Reads through Configura 2.1.0. `TranslationDefaults` and `DefaultsExport`, which the Gradle plugin runs. |

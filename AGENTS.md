@@ -23,7 +23,7 @@ When changing behavior:
 ### Module Map
 
 - `semantica-api`
-  Contracts and models: `Text`, `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
+  Contracts and models: `Message`, `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
 - `semantica-common`
   `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`). ICU4J for CLDR plural rules and formats.
 - `semantica-syntax/syntax-icu` (project `:syntax-icu`)

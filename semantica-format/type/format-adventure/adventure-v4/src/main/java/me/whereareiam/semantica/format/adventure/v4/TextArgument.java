@@ -25,7 +25,7 @@ import java.util.Objects;
  * plugin's class loader. It recognises an argument by Adventure's {@link VirtualComponent}, by this class's simple
  * name {@code TextArgument}, and by {@link Map.Entry} of the JDK for the name and the value, so plugins may relocate
  * Semantica freely. Values of JDK types, enums and Adventure components cross between copies as they are; a nested
- * {@link me.whereareiam.semantica.Text} of another copy is shown as its key and values.</p>
+ * {@link me.whereareiam.semantica.Message} of another copy is shown as its key and values.</p>
  */
 public final class TextArgument implements VirtualComponentRenderer<Void>, Map.Entry<String, Object> {
 	private static final String NAME = TextArgument.class.getSimpleName();

@@ -1,12 +1,12 @@
 ---
-title: Looking up texts
-description: Texts and their values, locales and fallbacks, and what a lookup returns.
+title: Looking up messages
+description: Messages and their values, locales and fallbacks, and what a lookup returns.
 ---
 
-A `Text` is a key and the values of its arguments. It is immutable; `with` returns a new text:
+A `Message` is a key and the values of its arguments. It is immutable; `with` returns a new message:
 
 ```java
-Text text = Text.of("shop.bought")
+Message message = Message.of("shop.bought")
         .with("item", itemName)
         .with("count", 3);
 ```
@@ -20,7 +20,7 @@ Text text = Text.of("shop.bought")
 | `Instant`, `ZonedDateTime`, `OffsetDateTime`, `LocalDate`, `LocalDateTime`, `LocalTime`, `Date` | as a date and time | `{x, date}`, `{x, time}` |
 | `Boolean` | `true` or `false` | `select` with `true`/`false` branches |
 | an enum constant | its name | `select`, by name or lowercase name |
-| `Text` | resolved in the same locale | |
+| `Message` | resolved in the same locale | |
 | anything else | left to the format, such as a component on Adventure | |
 
 Dates without a zone are shown in the zone of the builder's `clock(...)`, which defaults to the system's.
@@ -28,10 +28,10 @@ Dates without a zone are shown in the zone of the builder's `clock(...)`, which 
 ## Resolving
 
 ```java
-ResolvedMessage message = semantica.resolve(text, Locale.forLanguageTag("ru"));
-ResolvedMessage chosen = semantica.resolve(text, List.of(chosenLocale, clientLocale));
+ResolvedMessage resolved = semantica.resolve(message, Locale.forLanguageTag("ru"));
+ResolvedMessage chosen = semantica.resolve(message, List.of(chosenLocale, clientLocale));
 
-String line = message.plain();
+String line = resolved.plain();
 ```
 
 The locales are tried along the chain of [Fallback](../../format/fallback/index.md): each requested locale, its configured fallbacks, its base language, then the default locale and last the root locale, whose messages are the same in every language. Configure fallbacks on the builder:

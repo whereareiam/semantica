@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.format.adventure.v5;
 
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
 import net.kyori.adventure.key.Key;
@@ -146,19 +146,19 @@ public final class AdventureTranslator implements Translator {
 	public @Nullable Component translate(@NotNull TranslatableComponent component, @NotNull Locale locale) {
 		if (!semantica.has(component.key()) || defers(component.key(), locale)) return null;
 
-		Text text = Text.of(component.key());
+		Message message = Message.of(component.key());
 		List<TranslationArgument> arguments = component.arguments();
 		for (int index = 0; index < arguments.size(); index++) {
 			Object value = arguments.get(index).value();
 			Map.Entry<String, Object> named = TextArgument.read(value);
 			if (named != null) {
-				text = text.with(named.getKey(), named.getValue()).with(String.valueOf(index), named.getValue());
+				message = message.with(named.getKey(), named.getValue()).with(String.valueOf(index), named.getValue());
 				continue;
 			}
-			text = text.with(String.valueOf(index), value);
+			message = message.with(String.valueOf(index), value);
 		}
 
-		Component rendered = renderer.render(semantica.resolve(text, locale));
+		Component rendered = renderer.render(semantica.resolve(message, locale));
 		if (!component.style().isEmpty()) rendered = rendered.applyFallbackStyle(component.style());
 
 		return rendered.append(component.children());

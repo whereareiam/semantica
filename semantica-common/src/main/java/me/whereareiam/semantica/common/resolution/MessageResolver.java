@@ -1,6 +1,6 @@
 package me.whereareiam.semantica.common.resolution;
 
-import me.whereareiam.semantica.Text;
+import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.message.ParsedMessage;
@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Resolves a {@link Text} against a catalog: finds its message along the locale chain, chooses branches,
+ * Resolves a {@link Message} against a catalog: finds its message along the locale chain, chooses branches,
  * expands references and nested texts and formats values.
  *
  * <p>A message that goes deeper than the depth limit or grows past the size limit is given up on in that
@@ -53,40 +53,40 @@ public final class MessageResolver {
 	}
 
 	/**
-	 * Resolves a text.
+	 * Resolves a message.
 	 *
 	 * @param catalog the catalog to take messages from
-	 * @param text    the text
+	 * @param message the message
 	 * @param chain   the locales to try, in order
 	 * @param issues  receives what went wrong; the result is still usable
 	 * @return the resolved message; when no locale has the key, a message holding the key
 	 */
 	public @NotNull ResolvedMessage resolve(
 			@NotNull Catalog catalog,
-			@NotNull Text text,
+			@NotNull Message message,
 			@NotNull List<Locale> chain,
 			@NotNull Consumer<Issue> issues
 	) {
 		boolean found = false;
 		for (Locale locale : chain) {
-			Optional<Catalog.Entry> entry = catalog.entry(locale, text.getKey());
+			Optional<Catalog.Entry> entry = catalog.entry(locale, message.getKey());
 			if (entry.isEmpty()) continue;
 
 			found = true;
 			Expansion expansion = new Expansion(catalog, chain, issues);
 			try {
-				expansion.message(entry.get(), text.getValues(), 0);
-				return new ResolvedMessage(text.getKey(), locale, expansion.parts, true);
+				expansion.message(entry.get(), message.getValues(), 0);
+				return new ResolvedMessage(message.getKey(), locale, expansion.parts, true);
 			} catch (LimitExceeded exceeded) {
-				issues.accept(issue(exceeded.kind, text.getKey(), entry.get(), exceeded.getMessage()));
+				issues.accept(issue(exceeded.kind, message.getKey(), entry.get(), exceeded.getMessage()));
 			}
 		}
 
 		if (!found) {
-			issues.accept(new Issue(Issue.Kind.MISSING_KEY, text.getKey(), chain.getFirst(), null, null,
+			issues.accept(new Issue(Issue.Kind.MISSING_KEY, message.getKey(), chain.getFirst(), null, null,
 					"No locale of " + chain + " has this key"));
 		}
-		return new ResolvedMessage(text.getKey(), chain.getFirst(), List.of(new ResolvedMessage.Literal(text.getKey())), false);
+		return new ResolvedMessage(message.getKey(), chain.getFirst(), List.of(new ResolvedMessage.Literal(message.getKey())), false);
 	}
 
 	private static Issue issue(Issue.Kind kind, String key, Catalog.Entry entry, String detail) {
@@ -149,7 +149,7 @@ public final class MessageResolver {
 				return;
 			}
 
-			if (value instanceof Text nested) {
+			if (value instanceof Message nested) {
 				nested(entry, nested, depth);
 				return;
 			}
@@ -168,7 +168,7 @@ public final class MessageResolver {
 			parts.add(part);
 		}
 
-		private void nested(Catalog.Entry entry, Text nested, int depth) {
+		private void nested(Catalog.Entry entry, Message nested, int depth) {
 			for (Locale locale : chain) {
 				Optional<Catalog.Entry> target = catalog.entry(locale, nested.getKey());
 				if (target.isEmpty()) continue;
