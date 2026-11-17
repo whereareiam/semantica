@@ -100,7 +100,7 @@ class MessagesProcessorTest {
 
 		String source = compilation.file("com/example/GeneratedCommandMessages.java");
 		assertTrue(source.contains("public final class GeneratedCommandMessages implements com.example.CommandMessages"), source);
-		assertTrue(source.contains("me.whereareiam.semantica.Message.of(\"commands.cooldown\")\n\t\t\t\t.with(\"time\", time)"), source);
+		assertTrue(source.contains("me.whereareiam.semantica.Message.of(\"commands.cooldown\")\n\t\t\t\t.with(\"time\", me.whereareiam.semantica.Value.number(time))"), source);
 		assertTrue(source.contains("me.whereareiam.semantica.Message.of(\"commands.reload.settings.title\")"), source);
 		assertTrue(compilation.exists("com/example/GeneratedCommandMessages.class"));
 	}
@@ -133,7 +133,7 @@ class MessagesProcessorTest {
 
 		assertTrue(compilation.success(), compilation.errors());
 		String source = compilation.file("com/example/GeneratedDeclared.java");
-		assertTrue(source.contains("Message.of(\"shop.denied.\" + reason.segment())\n\t\t\t\t.with(\"player\", player)"), source);
+		assertTrue(source.contains("Message.of(\"shop.denied.\" + reason.segment())\n\t\t\t\t.with(\"player\", me.whereareiam.semantica.Value.text(player))"), source);
 		assertTrue(source.contains("Message.of(\"shop.named.\" + name)"), source);
 		assertEquals("{\n  \"waiting\": \"{@shop.denied.cooldown}\"\n}\n", compilation.file("META-INF/semantica/en/shop.json"));
 	}
@@ -163,9 +163,32 @@ class MessagesProcessorTest {
 				@Default("{when, date}") Message when(java.time.Instant when);
 				"""));
 
-		assertTrue(compilation.errors().contains("The plural {count} needs a number, but the parameter is java.lang.String"), compilation.errors());
-		assertTrue(compilation.errors().contains("{price, number} cannot format the parameter's type boolean"), compilation.errors());
+		assertTrue(compilation.errors().contains("The plural {count} needs a number, but the parameter is a text"), compilation.errors());
+		assertTrue(compilation.errors().contains("{price, number} cannot format the parameter, a boolean"), compilation.errors());
 		assertFalse(compilation.errors().contains("{when"), compilation.errors());
+	}
+
+	@Test
+	void failsOnAParameterThatIsNoValue() throws IOException {
+		Compilation compilation = compile(messages("@Default(\"Bought {item}\") Message bought(Object item);"));
+
+		assertFalse(compilation.success());
+		assertTrue(compilation.errors().contains("java.lang.Object is none of them"), compilation.errors());
+	}
+
+	@Test
+	void passesEachParameterAsItsKindOfValue() throws IOException {
+		Compilation compilation = compile(messages("""
+				@Default("{day} {at, date} {open} {said} {item}") Message opened(java.time.DayOfWeek day, java.util.Date at, boolean open, StringBuilder said, me.whereareiam.semantica.Message item);
+				"""));
+		String source = compilation.file("com/example/GeneratedDeclared.java");
+
+		assertTrue(compilation.success(), compilation.errors());
+		assertTrue(source.contains(".with(\"day\", me.whereareiam.semantica.Value.choice(day))"), source);
+		assertTrue(source.contains(".with(\"at\", me.whereareiam.semantica.Value.time(at))"), source);
+		assertTrue(source.contains(".with(\"open\", me.whereareiam.semantica.Value.flag(open))"), source);
+		assertTrue(source.contains(".with(\"said\", me.whereareiam.semantica.Value.text(String.valueOf(said)))"), source);
+		assertTrue(source.contains(".with(\"item\", me.whereareiam.semantica.Value.nested(item))"), source);
 	}
 
 	@Test

@@ -3,6 +3,7 @@ package me.whereareiam.semantica.testing;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.issue.Issue;
@@ -126,22 +127,22 @@ class ConformanceTest {
 	}
 
 	private static Message message(String key, JsonNode values) {
-		Map<String, Object> converted = new LinkedHashMap<>();
+		Map<String, Value> converted = new LinkedHashMap<>();
 		for (Map.Entry<String, JsonNode> field : values.properties())
 			converted.put(field.getKey(), value(field.getValue()));
 
 		return Message.of(key).with(converted);
 	}
 
-	private static Object value(JsonNode node) {
-		if (node.isIntegralNumber()) return node.longValue();
-		if (node.isNumber()) return node.decimalValue();
-		if (node.isBoolean()) return node.booleanValue();
+	private static Value value(JsonNode node) {
+		if (node.isIntegralNumber()) return Value.number(node.longValue());
+		if (node.isNumber()) return Value.number(node.decimalValue());
+		if (node.isBoolean()) return Value.flag(node.booleanValue());
 		if (node.isObject() && node.has("text")) {
 			JsonNode text = node.get("text");
-			return message(text.get("key").asText(), text.path("values"));
+			return Value.nested(message(text.get("key").asText(), text.path("values")));
 		}
 
-		return node.asText();
+		return Value.text(node.asText());
 	}
 }

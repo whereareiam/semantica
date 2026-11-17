@@ -2,6 +2,7 @@ package me.whereareiam.semantica.message;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import me.whereareiam.semantica.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,7 +60,7 @@ public final class ResolvedMessage {
 	/**
 	 * A part of a resolved message.
 	 */
-	public sealed interface Part permits Literal, Value {
+	public sealed interface Part permits Literal, Filled {
 		/**
 		 * Returns the part as plain text.
 		 *
@@ -80,23 +81,22 @@ public final class ResolvedMessage {
 	}
 
 	/**
-	 * A value the caller gave.
+	 * An argument filled with a value the caller gave.
 	 *
 	 * @param name      the argument's name
 	 * @param value     the value as given
-	 * @param formatted the value formatted for the locale, or {@code null} when Semantica does not know its
-	 *                  type and leaves it to the format, such as a component
+	 * @param formatted the value formatted for the locale, or {@code null} for a value the format renders itself
 	 * @param format    how the message asked for the value to be formatted
 	 * @param style     the format's style, or {@code null}
 	 */
-	public record Value(
+	public record Filled(
 			@NotNull String name,
-			@NotNull Object value,
+			@NotNull Value value,
 			@Nullable String formatted,
 			@NotNull ParsedMessage.Argument.Format format,
 			@Nullable String style
 	) implements Part {
-		public Value {
+		public Filled {
 			Objects.requireNonNull(name, "name");
 			Objects.requireNonNull(value, "value");
 			Objects.requireNonNull(format, "format");
@@ -104,7 +104,7 @@ public final class ResolvedMessage {
 
 		@Override
 		public @NotNull String text() {
-			return formatted != null ? formatted : String.valueOf(value);
+			return formatted != null ? formatted : value.plain();
 		}
 	}
 }

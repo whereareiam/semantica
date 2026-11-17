@@ -1,6 +1,7 @@
 package me.whereareiam.semantica.common;
 
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.issue.Issue;
@@ -192,16 +193,11 @@ class SemanticaTest {
 
 	@Test
 	void valuesPlatformsRenderStayUnformatted() {
-		Object component = new Object() {
-			@Override
-			public String toString() {
-				return "component";
-			}
-		};
+		Value.Rendered component = () -> "component";
 		Semantica semantica = builder().layer(Layer.of(new MemorySource("m").put(EN, "a", "<{thing}>"))).build();
 
 		var message = semantica.resolve(Message.of("a").with("thing", component), EN);
 		assertEquals("<component>", message.plain());
-		assertSame(component, ((me.whereareiam.semantica.message.ResolvedMessage.Value) message.getParts().get(1)).value());
+		assertSame(component, ((me.whereareiam.semantica.message.ResolvedMessage.Filled) message.getParts().get(1)).value());
 	}
 }

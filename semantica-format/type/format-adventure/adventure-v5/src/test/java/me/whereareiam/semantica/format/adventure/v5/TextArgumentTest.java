@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.format.adventure.v5;
 
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.issue.Issue;
@@ -17,7 +18,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import static me.whereareiam.semantica.format.adventure.v5.AdventureRendererTest.plain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,9 +39,10 @@ class TextArgumentTest {
 				return super.loadClass(name, resolve);
 			}
 		};
-		URL classes = TextArgument.class.getProtectionDomain().getCodeSource().getLocation();
+		URL format = TextArgument.class.getProtectionDomain().getCodeSource().getLocation();
+		URL api = Value.class.getProtectionDomain().getCodeSource().getLocation();
 
-		return new URLClassLoader(new URL[]{classes}, shared);
+		return new URLClassLoader(new URL[]{format, api}, shared);
 	}
 
 	@Test
@@ -59,8 +60,8 @@ class TextArgumentTest {
 			Class<?> foreign = other.loadClass(TextArgument.class.getName());
 			assertNotSame(TextArgument.class, foreign);
 
-			ComponentLike player = (ComponentLike) foreign.getMethod("of", String.class, Object.class).invoke(null, "player", "Ann");
-			ComponentLike count = (ComponentLike) foreign.getMethod("of", String.class, Object.class).invoke(null, "count", 2);
+			ComponentLike player = (ComponentLike) foreign.getMethod("of", String.class, String.class).invoke(null, "player", "Ann");
+			ComponentLike count = (ComponentLike) foreign.getMethod("of", String.class, Number.class).invoke(null, "count", 2);
 			Component translated = translator.translate((TranslatableComponent) Component.translatable("greeting", player, count), EN);
 
 			assertEquals("Hello, Ann! 2 items", plain(translated));
@@ -70,7 +71,7 @@ class TextArgumentTest {
 
 	@Test
 	void readsOnlyTextArguments() {
-		assertEquals(Map.entry("count", 3), TextArgument.read(TextArgument.of("count", 3).asComponent()));
+		assertEquals(new TextArgument.Named("count", Value.number(3)), TextArgument.read(TextArgument.of("count", 3).asComponent()));
 		assertNull(TextArgument.read(Component.text("count")));
 		assertNull(TextArgument.read(Component.virtual(Void.class, context -> Component.text("x"))));
 	}
