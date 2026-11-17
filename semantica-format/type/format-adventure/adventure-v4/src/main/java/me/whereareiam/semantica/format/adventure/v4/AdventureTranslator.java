@@ -149,13 +149,13 @@ public final class AdventureTranslator implements Translator {
 		Message message = Message.of(component.key());
 		List<TranslationArgument> arguments = component.arguments();
 		for (int index = 0; index < arguments.size(); index++) {
-			Object value = arguments.get(index).value();
-			Map.Entry<String, Object> named = TextArgument.read(value);
+			Object argument = arguments.get(index).value();
+			TextArgument.Named named = TextArgument.read(argument);
 			if (named != null) {
-				message = message.with(named.getKey(), named.getValue()).with(String.valueOf(index), named.getValue());
+				message = message.with(named.name(), named.value()).with(String.valueOf(index), named.value());
 				continue;
 			}
-			message = message.with(String.valueOf(index), value);
+			message = message.with(String.valueOf(index), ValueExchange.read(argument));
 		}
 
 		Component rendered = renderer.render(semantica.resolve(message, locale));

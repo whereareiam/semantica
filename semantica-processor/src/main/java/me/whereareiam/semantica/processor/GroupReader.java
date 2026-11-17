@@ -7,11 +7,14 @@ import me.whereareiam.semantica.declaration.Segment;
 import me.whereareiam.semantica.processor.MessageGroup.GroupMethod;
 import me.whereareiam.semantica.processor.MessageGroup.Member;
 import me.whereareiam.semantica.processor.MessageGroup.MessageMethod;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +41,7 @@ final class GroupReader {
 	private final TypeMirror message;
 	private final TypeMirror string;
 	private final TypeMirror keySegment;
+	private final ValueKinds kinds;
 	private final Deque<TypeElement> path = new ArrayDeque<>();
 
 	GroupReader(ProcessingEnvironment environment, Report report) {
@@ -46,6 +50,7 @@ final class GroupReader {
 		this.message = environment.getElementUtils().getTypeElement(Message.class.getName()).asType();
 		this.string = environment.getElementUtils().getTypeElement(String.class.getName()).asType();
 		this.keySegment = environment.getElementUtils().getTypeElement(KeySegment.class.getName()).asType();
+		this.kinds = new ValueKinds(environment);
 	}
 
 	/**
@@ -116,7 +121,7 @@ final class GroupReader {
 			return Optional.empty();
 		}
 
-		return Optional.of(new MessageMethod(method, segment, key, List.of(declared.value()), null));
+		return values(method, null).map(values -> new MessageMethod(method, segment, key, List.of(declared.value()), null, values));
 	}
 
 	private Optional<Member> withSegment(ExecutableElement method, String segment, String key, VariableElement keyed, Default declared) {
@@ -131,7 +136,30 @@ final class GroupReader {
 			return Optional.empty();
 		}
 
-		return Optional.of(new MessageMethod(method, segment, key, List.of(), keyed));
+		return values(method, keyed).map(values -> new MessageMethod(method, segment, key, List.of(), keyed, values));
+	}
+
+	/**
+	 * Returns the kinds of a method's parameters other than its segment, reporting each parameter that is no value.
+	 */
+	private Optional<Map<String, ValueKind>> values(ExecutableElement method, @Nullable VariableElement keyed) {
+		Map<String, ValueKind> values = new LinkedHashMap<>();
+		boolean valid = true;
+		for (VariableElement parameter : method.getParameters()) {
+			if (parameter.equals(keyed)) continue;
+
+			Optional<ValueKind> kind = kinds.of(parameter.asType());
+			if (kind.isEmpty()) {
+				report.error(parameter, "A message's parameter is text, a number, a date or time, a boolean, an enum, a Message or a Value; "
+						+ parameter.asType() + " is none of them");
+				valid = false;
+				continue;
+			}
+
+			values.put(parameter.getSimpleName().toString(), kind.get());
+		}
+
+		return valid ? Optional.of(Collections.unmodifiableMap(values)) : Optional.empty();
 	}
 
 	private Optional<Member> group(ExecutableElement method, String prefix, String segment) {

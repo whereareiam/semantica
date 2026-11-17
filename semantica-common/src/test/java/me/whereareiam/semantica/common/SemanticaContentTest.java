@@ -2,6 +2,7 @@ package me.whereareiam.semantica.common;
 
 import me.whereareiam.semantica.Content;
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.message.ResolvedMessage;
@@ -39,27 +40,27 @@ class SemanticaContentTest {
 
 	@Test
 	void resolvesAnAdministratorsOwnText() {
-		ResolvedMessage message = semantica.resolve(Content.of("<gold>Welcome, {player}!"), Map.of("player", "Ann"), List.of(EN));
+		ResolvedMessage message = semantica.resolve(Content.of("<gold>Welcome, {player}!"), Map.of("player", Value.text("Ann")), List.of(EN));
 
 		assertEquals("<gold>Welcome, Ann!", message.plain());
 		assertEquals(Locale.ROOT, message.getLocale());
 		assertTrue(message.isFound());
-		assertTrue(message.getParts().get(1) instanceof ResolvedMessage.Value);
+		assertTrue(message.getParts().get(1) instanceof ResolvedMessage.Filled);
 	}
 
 	@Test
 	void resolvesAReferenceInTheReadersLocaleWithTheContentsValues() {
 		Content vote = Content.of("{@chirper.vote}");
 
-		assertEquals("Stimm für uns ab, Ann!", semantica.resolve(vote, Map.of("player", "Ann"), List.of(DE)).plain());
-		assertEquals("Vote for us, Ann!", semantica.resolve(vote, Map.of("player", "Ann"), List.of(EN)).plain());
+		assertEquals("Stimm für uns ab, Ann!", semantica.resolve(vote, Map.of("player", Value.text("Ann")), List.of(DE)).plain());
+		assertEquals("Vote for us, Ann!", semantica.resolve(vote, Map.of("player", Value.text("Ann")), List.of(EN)).plain());
 	}
 
 	@Test
 	void mixesOwnTextAndReferences() {
 		Content sale = Content.of("<gold>{@chirper.sale} <gray>({days, plural, one {# day} other {# days}} left)");
 
-		assertEquals("<gold>Sale <gray>(3 days left)", semantica.resolve(sale, Map.of("days", 3), List.of(EN)).plain());
+		assertEquals("<gold>Sale <gray>(3 days left)", semantica.resolve(sale, Map.of("days", Value.number(3)), List.of(EN)).plain());
 	}
 
 	@Test

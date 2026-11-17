@@ -13,15 +13,19 @@ Message message = Message.of("shop.bought")
 
 ## Values
 
-| Value | In `{name}` | Also used by |
-| --- | --- | --- |
-| `String`, any `CharSequence` | as given | `select` |
-| `Integer`, `Long`, `Double`, `BigDecimal`, any `Number` | in the locale's number style | `plural`, `selectordinal`, `{x, number}` |
-| `Instant`, `ZonedDateTime`, `OffsetDateTime`, `LocalDate`, `LocalDateTime`, `LocalTime`, `Date` | as a date and time | `{x, date}`, `{x, time}` |
-| `Boolean` | `true` or `false` | `select` with `true`/`false` branches |
-| an enum constant | its name | `select`, by name or lowercase name |
-| `Message` | resolved in the same locale | |
-| anything else | left to the format, such as a component on Adventure | |
+Each value is of one kind of `Value`. `with` takes the plain Java value and makes the kind; `Value.text(...)`, `Value.number(...)` and the other factories make one where values are passed around on their own, such as in the map a [content](../content/index.md) is resolved with.
+
+| `with` takes | Kind | In `{name}` | Also used by |
+| --- | --- | --- | --- |
+| `String` | `Value.Text` | as given | `select` |
+| `Integer`, `Long`, `Double`, `BigDecimal`, any `Number` | `Value.Number` | in the locale's number style | `plural`, `selectordinal`, `{x, number}` |
+| `Instant`, `ZonedDateTime`, `OffsetDateTime`, `LocalDate`, `LocalDateTime`, `LocalTime`, `Date` | `Value.Time` | as a date and time | `{x, date}`, `{x, time}` |
+| `boolean` | `Value.Flag` | `true` or `false` | `select` with `true`/`false` branches |
+| an enum constant | `Value.Choice` | its name | `select`, by name or lowercase name |
+| `Message` | `Value.Nested` | resolved in the same locale | |
+| a format's own kind, such as Adventure's `ComponentValue` | `Value.Rendered` | rendered by the format; as text elsewhere | |
+
+An enum constant that is also a date field, such as a `DayOfWeek`, fits both `with`s; pass it as `Value.choice(day)` or `Value.time(day)`. A declared message's parameter of such a type is a choice.
 
 Dates without a zone are shown in the zone of the builder's `clock(...)`, which defaults to the system's.
 

@@ -6,7 +6,6 @@ import me.whereareiam.semantica.format.adventure.TagPolicy;
 import me.whereareiam.semantica.issue.Check;
 import me.whereareiam.semantica.message.ResolvedMessage;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -155,9 +154,9 @@ public final class AdventureRenderer implements Renderer<Component> {
 		for (ResolvedMessage.Part part : parts) {
 			switch (part) {
 				case ResolvedMessage.Literal literal -> template.append(rendering.getText().apply(literal.text()));
-				case ResolvedMessage.Value value -> {
+				case ResolvedMessage.Filled filled -> {
 					String name = PLACEHOLDER + values.size();
-					values.add(Placeholder.component(name, component(value)));
+					values.add(Placeholder.component(name, component(filled)));
 					template.append('<').append(name).append('>');
 				}
 			}
@@ -167,8 +166,8 @@ public final class AdventureRenderer implements Renderer<Component> {
 		return miniMessage.deserialize(template.toString(), TagResolver.resolver(values));
 	}
 
-	private static Component component(ResolvedMessage.Value value) {
-		if (value.value() instanceof ComponentLike component) return component.asComponent();
-		return Component.text(value.text());
+	private static Component component(ResolvedMessage.Filled filled) {
+		if (filled.value() instanceof ComponentValue component) return component.getComponent();
+		return Component.text(filled.text());
 	}
 }

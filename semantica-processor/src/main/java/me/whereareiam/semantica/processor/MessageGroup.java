@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -58,13 +59,15 @@ final class MessageGroup {
 	 * @param key     the key of its message; for a method with a segment parameter, the key before that segment
 	 * @param lines   the lines of its default, empty for a method with a segment parameter
 	 * @param keyed   the parameter that is the key's last segment, or {@code null}
+	 * @param values  the kinds of the other parameters, which become the message's values, in order
 	 */
 	record MessageMethod(
 			ExecutableElement method,
 			String segment,
 			String key,
 			List<String> lines,
-			@Nullable VariableElement keyed
+			@Nullable VariableElement keyed,
+			Map<String, ValueKind> values
 	) implements Member {
 	}
 

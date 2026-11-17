@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.processor;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.exception.SyntaxException;
 import me.whereareiam.semantica.message.ParsedMessage;
 import me.whereareiam.semantica.message.ParsedMessage.Argument;
@@ -9,37 +10,20 @@ import me.whereareiam.semantica.processor.MessageGroup.MessageMethod;
 import me.whereareiam.semantica.syntax.Syntax;
 import me.whereareiam.semantica.syntax.icu.IcuSyntax;
 
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 
 /**
  * Checks the default of a message method against its parameters: the text is valid in the message syntax, each of its
  * arguments is a parameter, and a plural or a number takes a number, a date or a time a date. A parameter no argument
  * uses is a warning, since a translation may still use it.
  */
+@RequiredArgsConstructor
 final class DefaultCheck {
 	private static final Syntax SYNTAX = new IcuSyntax();
 
 	private final Report report;
-	private final Types types;
-	private final TypeMirror number;
-	private final TypeMirror temporal;
-	private final TypeMirror date;
-
-	DefaultCheck(ProcessingEnvironment environment, Report report) {
-		this.report = report;
-		this.types = environment.getTypeUtils();
-		this.number = type(environment, "java.lang.Number");
-		this.temporal = type(environment, "java.time.temporal.TemporalAccessor");
-		this.date = type(environment, "java.util.Date");
-	}
 
 	/**
 	 * Checks a method's default.
@@ -56,9 +40,7 @@ final class DefaultCheck {
 			return null;
 		}
 
-		Map<String, TypeMirror> parameters = new LinkedHashMap<>();
-		for (VariableElement parameter : method.method().getParameters())
-			parameters.put(parameter.getSimpleName().toString(), parameter.asType());
+		Map<String, ValueKind> parameters = method.values();
 
 		Set<String> arguments = parsed.arguments();
 		for (String argument : arguments) {
@@ -75,14 +57,14 @@ final class DefaultCheck {
 		return parsed;
 	}
 
-	private void types(MessageMethod method, ParsedMessage message, Map<String, TypeMirror> parameters) {
+	private void types(MessageMethod method, ParsedMessage message, Map<String, ValueKind> parameters) {
 		for (ParsedMessage.Node node : message.getNodes()) {
 			switch (node) {
 				case Argument argument -> argument(method, argument, parameters.get(argument.name()));
 				case Plural plural -> {
-					TypeMirror type = parameters.get(plural.name());
-					if (type != null && !numeric(type))
-						error(method, "The plural {" + plural.name() + "} needs a number, but the parameter is " + type);
+					ValueKind kind = parameters.get(plural.name());
+					if (kind != null && !kind.fits(ValueKind.NUMBER))
+						error(method, "The plural {" + plural.name() + "} needs a number, but the parameter is a " + kind);
 					plural.branches().values().forEach(branch -> types(method, branch, parameters));
 				}
 				case Select select -> select.branches().values().forEach(branch -> types(method, branch, parameters));
@@ -92,24 +74,18 @@ final class DefaultCheck {
 		}
 	}
 
-	private void argument(MessageMethod method, Argument argument, TypeMirror type) {
-		if (type == null) return;
+	private void argument(MessageMethod method, Argument argument, ValueKind kind) {
+		if (kind == null) return;
 
 		boolean fits = switch (argument.format()) {
 			case NONE -> true;
-			case NUMBER -> numeric(type);
-			case DATE, TIME -> types.isAssignable(type, temporal) || types.isAssignable(type, date);
+			case NUMBER -> kind.fits(ValueKind.NUMBER);
+			case DATE, TIME -> kind.fits(ValueKind.TIME);
 		};
 		if (!fits) {
 			String format = argument.format().name().toLowerCase(Locale.ROOT);
-			error(method, "{" + argument.name() + ", " + format + "} cannot format the parameter's type " + type);
+			error(method, "{" + argument.name() + ", " + format + "} cannot format the parameter, a " + kind);
 		}
-	}
-
-	private boolean numeric(TypeMirror type) {
-		if (type.getKind().isPrimitive()) return type.getKind() != TypeKind.BOOLEAN && type.getKind() != TypeKind.CHAR;
-
-		return types.isAssignable(type, number);
 	}
 
 	private void error(MessageMethod method, String text) {
@@ -120,7 +96,4 @@ final class DefaultCheck {
 		report.warning(method.method(), text);
 	}
 
-	private static TypeMirror type(ProcessingEnvironment environment, String name) {
-		return environment.getElementUtils().getTypeElement(name).asType();
-	}
 }

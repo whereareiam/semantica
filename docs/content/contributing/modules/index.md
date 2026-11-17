@@ -7,14 +7,14 @@ description: How the repository is laid out, which module owns what, and how a m
 
 | Gradle project | Directory | Owns |
 | --- | --- | --- |
-| `semantica-api` | `semantica-api/` | The contracts and models: `Message`, `Content`, the declarations `Messages`, `Default`, `Segment` and `KeySegment`, `Catalog`, `Layer`, `Source`, `LocaleChain`, `ParsedMessage`, `ResolvedMessage`, `Syntax`, `Issue`, `Check`, `SyntaxException`. No dependencies beyond the JDK and annotations. |
+| `semantica-api` | `semantica-api/` | The contracts and models: `Message`, `Value`, `Content`, the declarations `Messages`, `Default`, `Segment` and `KeySegment`, `Catalog`, `Layer`, `Source`, `LocaleChain`, `ParsedMessage`, `ResolvedMessage`, `Syntax`, `Issue`, `Check`, `SyntaxException`. No dependencies beyond the JDK and annotations. |
 | `semantica-common` | `semantica-common/` | `Semantica` and the engine: building catalogs, checks, resolution, formatting. Uses ICU4J. |
 | `syntax-icu` | `semantica-syntax/syntax-icu/` | `IcuSyntax`, the parser of ICU MessageFormat with references. Depends on the api only. |
 | `source-file` | `semantica-source/source-file/` | `FileSource`: a folder on disk, watched; `ClasspathSource`: the default files of the jar or class folder that holds a class. Both read through Configura 2.1.0 and `TranslationFiles`. |
 | `source-http` | `semantica-source/source-http/` | `HttpSource`, the `Manifest` and `Bundle` formats it reads and `semantica-cli` writes, and the `BundleLayout` it finds them by. Uses Jackson. |
 | `:semantica-format:common` (artifact `format-common`) | `semantica-format/common/` | `Renderer` and `PlainRenderer`. Depends on the api only. |
 | `format-adventure-common` | `semantica-format/type/format-adventure/common/` | `TagPolicy`, `MarkupCheck` (its logic, given a `MiniMessageTags`), `MiniMessageTags`, `MinecraftLocales`. No Adventure types. |
-| `format-adventure-v4` | `semantica-format/type/format-adventure/adventure-v4/` | `AdventureRenderer`, `AdventureTags`, `AdventureTranslator` (with `AuthorityLookup` for the authority), `TextArgument` for Adventure 4.25, `compileOnly`. |
+| `format-adventure-v4` | `semantica-format/type/format-adventure/adventure-v4/` | `AdventureRenderer`, `AdventureTags`, `AdventureTranslator` (with `AuthorityLookup` for the authority), `TextArgument`, `ComponentValue` (with `ValueExchange`, the JDK and Adventure types values cross class loaders as) for Adventure 4.25, `compileOnly`. |
 | `format-adventure-v5` | `semantica-format/type/format-adventure/adventure-v5/` | The same classes for Adventure 5.2, `compileOnly`. |
 | `semantica-processor` | `semantica-processor/` | `MessagesProcessor`, the annotation processor of `@Messages` interfaces: `GroupReader` reads an interface, `DefaultCheck` checks each default with `IcuSyntax`, `ImplementationWriter` and `DefaultsWriter` write `Generated<Interface>` and `META-INF/semantica/<locale>/`. Depends on the api and `syntax-icu`. |
 | `semantica-testing` | `semantica-testing/` | `MemorySource`, `IssueAssert`, and the conformance cases under `src/main/resources/conformance/`. |
