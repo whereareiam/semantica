@@ -1,6 +1,8 @@
 package me.whereareiam.semantica;
 
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -18,14 +20,11 @@ import java.util.regex.Pattern;
  * }</pre>
  */
 @EqualsAndHashCode
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class KeyPrefix {
 	private static final Pattern VALID = Pattern.compile("[\\p{L}\\p{N}_-]+(\\.[\\p{L}\\p{N}_-]+)*");
 
 	private final String value;
-
-	private KeyPrefix(String value) {
-		this.value = value;
-	}
 
 	/**
 	 * Reads a prefix.

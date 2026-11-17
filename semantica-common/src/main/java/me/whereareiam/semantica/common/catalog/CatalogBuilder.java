@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.common.catalog;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.exception.SyntaxException;
 import me.whereareiam.semantica.issue.Check;
@@ -25,24 +26,24 @@ import java.util.Objects;
  * <p>Parsed messages are kept from one build to the next by their source text, so a rebuild after one layer
  * changed parses only what changed. The kept messages are exactly those of the last build.</p>
  */
+@RequiredArgsConstructor
 public final class CatalogBuilder {
+	/**
+	 * Reads the messages.
+	 */
 	private final Syntax syntax;
-	private final LocaleChain chain;
-	private final int maxDepth;
-	private Map<String, Object> parsed = Map.of();
 
 	/**
-	 * Creates a builder.
-	 *
-	 * @param syntax   reads the messages
-	 * @param chain    the locale chain references are followed along
-	 * @param maxDepth how deep references may go
+	 * The locale chain references are followed along.
 	 */
-	public CatalogBuilder(@NotNull Syntax syntax, @NotNull LocaleChain chain, int maxDepth) {
-		this.syntax = syntax;
-		this.chain = chain;
-		this.maxDepth = maxDepth;
-	}
+	private final LocaleChain chain;
+
+	/**
+	 * How deep references may go.
+	 */
+	private final int maxDepth;
+
+	private Map<String, Object> parsed = Map.of();
 
 	/**
 	 * Builds a catalog.

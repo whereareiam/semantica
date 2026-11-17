@@ -10,6 +10,7 @@ import com.ibm.icu.text.RelativeDateTimeFormatter;
 import com.ibm.icu.text.SimpleDateFormat;
 import com.ibm.icu.util.TimeZone;
 import com.ibm.icu.util.ULocale;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.message.ParsedMessage.Argument.Format;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,7 @@ import java.util.function.Supplier;
  * not safe to share between threads. The cache holds at most a few thousand formats and starts over when
  * it is full.</p>
  */
+@RequiredArgsConstructor
 public final class ValueFormatter {
 	private static final int CACHE_LIMIT = 2048;
 	private static final long MINUTE = 60;
@@ -54,17 +56,11 @@ public final class ValueFormatter {
 			new RelativeStep(Long.MAX_VALUE, 365 * DAY, RelativeDateTimeFormatter.RelativeUnit.YEARS)
 	);
 
+	/**
+	 * The clock relative times are measured from; its zone is the zone dates are shown in.
+	 */
 	private final Clock clock;
 	private final Map<String, Object> formats = new ConcurrentHashMap<>();
-
-	/**
-	 * Creates a formatter.
-	 *
-	 * @param clock the clock relative times are measured from; its zone is the zone dates are shown in
-	 */
-	public ValueFormatter(@NotNull Clock clock) {
-		this.clock = clock;
-	}
 
 	/**
 	 * Returns the plural form of a number: {@code one}, {@code few}, {@code other}...

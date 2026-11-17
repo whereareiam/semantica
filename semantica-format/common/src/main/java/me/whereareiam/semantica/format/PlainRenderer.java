@@ -1,5 +1,7 @@
 package me.whereareiam.semantica.format;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.message.ResolvedMessage;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,16 +16,13 @@ import java.util.regex.Pattern;
  * logger.info(plain.render(semantica.resolve(Message.of("server.started"), Locale.ENGLISH)));
  * }</pre>
  */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PlainRenderer implements Renderer<String> {
 	private static final Pattern TAG = Pattern.compile("</?[!?#]?[a-z0-9_:\\-.]+(?::[^<>]*)?/?>", Pattern.CASE_INSENSITIVE);
 	private static final PlainRenderer AS_WRITTEN = new PlainRenderer(false);
 	private static final PlainRenderer WITHOUT_TAGS = new PlainRenderer(true);
 
 	private final boolean stripTags;
-
-	private PlainRenderer(boolean stripTags) {
-		this.stripTags = stripTags;
-	}
 
 	/**
 	 * Returns a renderer that keeps literal parts as written.

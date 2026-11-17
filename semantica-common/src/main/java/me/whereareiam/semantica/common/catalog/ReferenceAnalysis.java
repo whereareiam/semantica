@@ -1,5 +1,7 @@
 package me.whereareiam.semantica.common.catalog;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.locale.LocaleChain;
@@ -16,16 +18,12 @@ import java.util.Set;
  * Follows the references of every message along the locale chain of its locale, and leaves out messages whose
  * references are missing, lead into a cycle or go deeper than allowed.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class ReferenceAnalysis {
 	private static final int CYCLE = -1;
 
 	private final LocaleChain chain;
 	private final int maxDepth;
-
-	ReferenceAnalysis(LocaleChain chain, int maxDepth) {
-		this.chain = chain;
-		this.maxDepth = maxDepth;
-	}
 
 	void exclude(Map<Locale, Map<String, Catalog.Entry>> entries, List<Issue> issues) {
 		Map<Locale, List<String>> excluded = new HashMap<>();

@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.common.resolution;
 
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.Message;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
@@ -34,28 +35,27 @@ import java.util.function.Consumer;
  * chain of the locale asked for, as every message's do, and its numbers, dates and plural forms follow the
  * locale asked for first.</p>
  */
+@RequiredArgsConstructor
 public final class MessageResolver {
 	/**
 	 * The layer named in issues of a content written in a config.
 	 */
 	public static final String CONTENT_LAYER = "content";
 
+	/**
+	 * Formats values and chooses plural forms.
+	 */
 	private final ValueFormatter formatter;
-	private final int maxDepth;
-	private final int maxLength;
 
 	/**
-	 * Creates a resolver.
-	 *
-	 * @param formatter formats values and chooses plural forms
-	 * @param maxDepth  how deep references and nested texts may go
-	 * @param maxLength how many characters a resolved message may have
+	 * How deep references and nested texts may go.
 	 */
-	public MessageResolver(@NotNull ValueFormatter formatter, int maxDepth, int maxLength) {
-		this.formatter = formatter;
-		this.maxDepth = maxDepth;
-		this.maxLength = maxLength;
-	}
+	private final int maxDepth;
+
+	/**
+	 * How many characters a resolved message may have.
+	 */
+	private final int maxLength;
 
 	/**
 	 * Resolves a message.
