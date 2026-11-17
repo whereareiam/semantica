@@ -1,7 +1,9 @@
 package me.whereareiam.semantica.locale;
 
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -34,14 +36,10 @@ import java.util.Set;
  */
 @Getter
 @EqualsAndHashCode
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class LocaleChain {
 	private final Locale defaultLocale;
 	private final Map<Locale, List<Locale>> fallbacks;
-
-	private LocaleChain(Locale defaultLocale, Map<Locale, List<Locale>> fallbacks) {
-		this.defaultLocale = defaultLocale;
-		this.fallbacks = fallbacks;
-	}
 
 	/**
 	 * Starts a chain.

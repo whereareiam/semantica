@@ -1,11 +1,13 @@
 package me.whereareiam.semantica.cli;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.configura.Configura;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
-import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.format.adventure.v5.AdventureRenderer;
+import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.source.file.FileSource;
 import me.whereareiam.semantica.syntax.icu.IcuSyntax;
 
@@ -19,14 +21,10 @@ import java.util.function.Predicate;
  * Loads a translations repository the way Semantica loads translations, with the markup checks its key prefixes name.
  * MiniMessage is judged by the tags of Adventure 5, the newest; texts for Minecraft's lang files by {@link MinecraftCheck}.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class TranslationsCheck {
 	private final Path folder;
 	private final RepositorySettings settings;
-
-	TranslationsCheck(Path folder, RepositorySettings settings) {
-		this.folder = folder;
-		this.settings = settings;
-	}
 
 	Result run() {
 		Semantica.Builder builder = Semantica.builder()

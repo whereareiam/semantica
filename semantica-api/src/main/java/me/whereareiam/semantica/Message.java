@@ -1,7 +1,9 @@
 package me.whereareiam.semantica;
 
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -24,14 +26,10 @@ import java.util.Objects;
  */
 @Getter
 @EqualsAndHashCode
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Message {
 	private final String key;
 	private final Map<String, Object> values;
-
-	private Message(String key, Map<String, Object> values) {
-		this.key = key;
-		this.values = values;
-	}
 
 	/**
 	 * Starts a message without values.

@@ -2,7 +2,9 @@ package me.whereareiam.semantica.cli;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.configura.Configura;
 import me.whereareiam.semantica.KeyPrefix;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
@@ -40,6 +42,7 @@ import java.util.Optional;
  * }</pre>
  */
 @Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class RepositorySettings {
 	static final String FILE = "semantica.json";
 
@@ -47,13 +50,6 @@ final class RepositorySettings {
 	private final List<String> grouping;
 	private final List<Markup> markup;
 	private final Map<String, List<KeyPrefix>> products;
-
-	private RepositorySettings(Locale defaultLocale, List<String> grouping, List<Markup> markup, Map<String, List<KeyPrefix>> products) {
-		this.defaultLocale = defaultLocale;
-		this.grouping = grouping;
-		this.markup = markup;
-		this.products = products;
-	}
 
 	static RepositorySettings read(Path folder) throws IOException {
 		Path file = folder.resolve(FILE);

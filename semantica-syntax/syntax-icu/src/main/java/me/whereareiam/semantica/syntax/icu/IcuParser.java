@@ -1,5 +1,7 @@
 package me.whereareiam.semantica.syntax.icu;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.exception.SyntaxException;
 import me.whereareiam.semantica.message.ParsedMessage;
 import me.whereareiam.semantica.message.ParsedMessage.Argument;
@@ -18,15 +20,12 @@ import java.util.Set;
 /**
  * Reads one message; one instance per message.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class IcuParser {
 	private static final Set<String> PLURAL_FORMS = Set.of("zero", "one", "two", "few", "many", "other");
 
 	private final String source;
 	private int position;
-
-	IcuParser(String source) {
-		this.source = source;
-	}
 
 	ParsedMessage parse() {
 		ParsedMessage message = message(false);

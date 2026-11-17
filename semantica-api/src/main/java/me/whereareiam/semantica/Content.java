@@ -1,7 +1,9 @@
 package me.whereareiam.semantica;
 
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -31,12 +33,9 @@ import java.util.Objects;
  */
 @Getter
 @EqualsAndHashCode
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Content {
 	private final String source;
-
-	private Content(String source) {
-		this.source = source;
-	}
 
 	/**
 	 * Takes text as written in a config.

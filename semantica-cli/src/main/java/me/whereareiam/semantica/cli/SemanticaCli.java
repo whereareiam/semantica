@@ -1,5 +1,7 @@
 package me.whereareiam.semantica.cli;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.KeyPrefix;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
@@ -34,6 +36,7 @@ import java.util.stream.Stream;
  * {@code <output>/manifest.json}. Both its folders are required, and the output must lie outside the
  * translations, where {@code check} would take it for a locale.</p>
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class SemanticaCli {
 	private static final String USAGE = """
 			Usage:
@@ -44,12 +47,6 @@ public final class SemanticaCli {
 	private final PrintStream out;
 	private final PrintStream err;
 	private final Map<String, String> environment;
-
-	SemanticaCli(PrintStream out, PrintStream err, Map<String, String> environment) {
-		this.out = out;
-		this.err = err;
-		this.environment = environment;
-	}
 
 	/**
 	 * Runs a command and exits with its status: 0 when it succeeded, 1 when translations have errors, 2 when it
