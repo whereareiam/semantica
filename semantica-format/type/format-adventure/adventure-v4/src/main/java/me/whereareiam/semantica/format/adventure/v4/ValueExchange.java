@@ -21,7 +21,8 @@ final class ValueExchange {
 	 * Returns the type a value passes between copies as.
 	 *
 	 * @param value the value
-	 * @return a string, a number, a date or time, a boolean, an enum constant, a message or a component
+	 * @return a string, a number, a date or time, a boolean, an enum constant, a message, a component, or the joined
+	 * or linked value itself, which another copy shows as its text
 	 */
 	static @NotNull Object write(@NotNull Value value) {
 		return switch (value) {
@@ -31,6 +32,8 @@ final class ValueExchange {
 			case Value.Flag flag -> flag.value();
 			case Value.Choice choice -> choice.value();
 			case Value.Nested nested -> nested.value();
+			case Value.Joined joined -> joined;
+			case Value.Linked linked -> linked;
 			case ComponentValue component -> component.getComponent();
 			case Value.Rendered rendered -> rendered.plain();
 		};

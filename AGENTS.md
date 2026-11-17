@@ -24,7 +24,7 @@ When changing behavior:
 ### Module Map
 
 - `semantica-api`
-  Contracts and models: `Message` (a key and its values), `Value` (the kinds a value is of; a format adds its own `Value.Rendered`), `Content` (a config's text, which may hold `{@key}` references), `declaration/` (`Messages`, `Default`, `Segment`, `KeySegment`, read by the processor), `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
+  Contracts and models: `Message` (a key and its values), `Value` (the kinds a value is of, `Joined` lists and `Linked` clickable values among them; a format adds its own `Value.Rendered`), `Content` (a config's text, which may hold `{@key}` references), `declaration/` (`Messages`, `Default`, `Segment`, `KeySegment`, read by the processor), `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
 - `semantica-common`
   `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`, `ContentParser`, which keeps parsed contents by their text). ICU4J for CLDR plural rules and formats.
 - `semantica-syntax/syntax-icu` (project `:syntax-icu`)

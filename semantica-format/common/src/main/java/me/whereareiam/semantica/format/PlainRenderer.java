@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.message.ResolvedMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -46,11 +47,19 @@ public final class PlainRenderer implements Renderer<String> {
 	@Override
 	public @NotNull String render(@NotNull ResolvedMessage message) {
 		StringBuilder text = new StringBuilder();
-		for (ResolvedMessage.Part part : message.getParts()) {
-			if (stripTags && part instanceof ResolvedMessage.Literal literal) text.append(TAG.matcher(literal.text()).replaceAll(""));
-			else text.append(part.text());
-		}
+		append(message.getParts(), text);
 
 		return text.toString();
+	}
+
+	// A linked value shows its content.
+	private void append(List<ResolvedMessage.Part> parts, StringBuilder text) {
+		for (ResolvedMessage.Part part : parts) {
+			switch (part) {
+				case ResolvedMessage.Literal literal when stripTags -> text.append(TAG.matcher(literal.text()).replaceAll(""));
+				case ResolvedMessage.Linked linked -> append(linked.parts(), text);
+				default -> text.append(part.text());
+			}
+		}
 	}
 }

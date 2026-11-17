@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,5 +48,7 @@ class ValueTest {
 		assertEquals("MONDAY", Value.choice(DayOfWeek.MONDAY).plain());
 		assertEquals("shop.note", Value.nested(Message.of("shop.note")).plain());
 		assertEquals("Sword of Dawn", rendered.plain());
+		assertEquals("<player> 2", Value.joined(List.of(Value.text("<player> "), Value.number(2))).plain());
+		assertEquals("Next", Value.linked(Value.text("Next"), Value.Link.runCommand("/help 2")).plain());
 	}
 }

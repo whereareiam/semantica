@@ -5,6 +5,7 @@ import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.issue.Issue;
+import me.whereareiam.semantica.message.ResolvedMessage;
 import me.whereareiam.semantica.source.Source;
 import me.whereareiam.semantica.syntax.icu.IcuSyntax;
 import me.whereareiam.semantica.testing.IssueAssert;
@@ -199,5 +200,43 @@ class SemanticaTest {
 		var message = semantica.resolve(Message.of("a").with("thing", component), EN);
 		assertEquals("<component>", message.plain());
 		assertSame(component, ((me.whereareiam.semantica.message.ResolvedMessage.Filled) message.getParts().get(1)).value());
+	}
+
+	@Test
+	void joinedValuesShowOneAfterAnotherEachInTheSameLocale() {
+		Semantica semantica = builder()
+				.layer(Layer.of(new MemorySource("m")
+						.put(EN, "argument", "<{name}>")
+						.put(DE, "argument", "<{name}>")
+						.put(DE, "optional", "[{name}]")
+						.put(DE, "line", "/{command}{arguments}")))
+				.build();
+
+		Value arguments = Value.joined(List.of(
+				Value.text(" "), Value.nested(Message.of("argument").with("name", "Spieler")),
+				Value.text(" "), Value.nested(Message.of("optional").with("name", "Seite"))));
+
+		assertEquals("/warp <Spieler> [Seite]",
+				semantica.resolve(Message.of("line").with("command", "warp").with("arguments", arguments), DE).plain());
+		assertEquals("/warp", semantica.resolve(Message.of("line").with("command", "warp")
+				.with("arguments", Value.joined(List.of())), DE).plain());
+	}
+
+	@Test
+	void aLinkedValueKeepsItsContentsPartsTogetherWithItsLink() {
+		Semantica semantica = builder()
+				.layer(Layer.of(new MemorySource("m")
+						.put(EN, "next", "<gold>Next ({page})")
+						.put(EN, "line", "Page 1 {next}")))
+				.build();
+		Value.Link link = Value.Link.runCommand("/help 2");
+
+		ResolvedMessage message = semantica.resolve(Message.of("line")
+				.with("next", Value.linked(Value.nested(Message.of("next").with("page", 2)), link)), EN);
+
+		assertEquals("Page 1 <gold>Next (2)", message.plain());
+		ResolvedMessage.Linked linked = (ResolvedMessage.Linked) message.getParts().get(1);
+		assertEquals(link, linked.link());
+		assertEquals(List.of("<gold>Next (", "2", ")"), linked.parts().stream().map(ResolvedMessage.Part::text).toList());
 	}
 }

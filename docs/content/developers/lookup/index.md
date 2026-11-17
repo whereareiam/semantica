@@ -23,9 +23,29 @@ Each value is of one kind of `Value`. `with` takes the plain Java value and make
 | `boolean` | `Value.Flag` | `true` or `false` | `select` with `true`/`false` branches |
 | an enum constant | `Value.Choice` | its name | `select`, by name or lowercase name |
 | `Message` | `Value.Nested` | resolved in the same locale | |
+| `Value.joined(values)` | `Value.Joined` | each value one after another, each as it would show alone | |
+| `Value.linked(content, link)` | `Value.Linked` | its content, which a click on it acts on as the `Value.Link` says | |
 | a format's own kind, such as Adventure's `ComponentValue` | `Value.Rendered` | rendered by the format; as text elsewhere | |
 
 An enum constant that is also a date field, such as a `DayOfWeek`, fits both `with`s; pass it as `Value.choice(day)` or `Value.time(day)`. A declared message's parameter of such a type is a choice.
+
+A joined value shows a list, such as a command's arguments, each its own message:
+
+```java
+Value arguments = Value.joined(List.of(
+        Value.text(" "), Value.nested(messages.argument("player")),
+        Value.text(" "), Value.nested(messages.optionalArgument("page"))));
+```
+
+A linked value does something when it is clicked: it runs or suggests a command, opens an address or copies a text
+(`Value.Link.runCommand(...)`, `suggestCommand`, `openUrl`, `copy`). The program chooses the link, never a
+translation, so a translator cannot make a reader run a command. A format that cannot click shows the content:
+
+```java
+Value next = Value.linked(Value.nested(messages.next(3)), Value.Link.runCommand("/arbor help 3"));
+```
+
+A resolved message keeps a linked value's content together as one `ResolvedMessage.Linked` part with its link.
 
 Dates without a zone are shown in the zone of the builder's `clock(...)`, which defaults to the system's.
 
