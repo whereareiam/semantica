@@ -11,6 +11,7 @@ import com.ibm.icu.text.SimpleDateFormat;
 import com.ibm.icu.util.TimeZone;
 import com.ibm.icu.util.ULocale;
 import lombok.RequiredArgsConstructor;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.message.ParsedMessage.Argument.Format;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +25,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -60,7 +60,8 @@ public final class ValueFormatter {
 	 * The clock relative times are measured from; its zone is the zone dates are shown in.
 	 */
 	private final Clock clock;
-	private final Map<String, Object> formats = new ConcurrentHashMap<>();
+	private final Map<String, NumberFormat> numbers = new ConcurrentHashMap<>();
+	private final Map<String, DateFormat> dates = new ConcurrentHashMap<>();
 
 	/**
 	 * Returns the plural form of a number: {@code one}, {@code few}, {@code other}...
@@ -90,42 +91,35 @@ public final class ValueFormatter {
 	}
 
 	/**
-	 * Formats a value. This is where a value of a text, which may be of any type, gets its type: each case below
-	 * hands a typed value on.
+	 * Formats a value as a message asks for it.
 	 *
 	 * @param value  the value
 	 * @param format how the message asks for it
 	 * @param style  the style, or {@code null}
 	 * @param locale the locale
-	 * @return the formatted value, or {@code null} when the message asks for no format and the value is of a type
-	 * Semantica does not know, such as a component, which the text format renders itself
+	 * @return the formatted value, or {@code null} for a value the format renders itself, such as a component, when
+	 * the message asks for no format
 	 * @throws IllegalArgumentException when the value does not suit the format, or the style is not valid
 	 */
-	public @Nullable String format(@NotNull Object value, @NotNull Format format, @Nullable String style, @NotNull Locale locale) {
+	public @Nullable String format(@NotNull Value value, @NotNull Format format, @Nullable String style, @NotNull Locale locale) {
 		return switch (value) {
-			case Number number when format != Format.DATE && format != Format.TIME -> number(number, style, locale);
-			case TemporalAccessor time when format != Format.NUMBER -> date(zoned(time), format, style, locale);
-			case Date date when format != Format.NUMBER -> date(date.toInstant().atZone(clock.getZone()), format, style, locale);
-			case Calendar calendar when format != Format.NUMBER ->
-					date(calendar.toInstant().atZone(calendar.getTimeZone().toZoneId()), format, style, locale);
-			case CharSequence text when format == Format.NONE -> text.toString();
-			case Boolean bool when format == Format.NONE -> bool.toString();
-			case Character character when format == Format.NONE -> character.toString();
-			case Enum<?> constant when format == Format.NONE -> constant.name();
-			default -> unknown(value, format);
+			case Value.Number number when format != Format.DATE && format != Format.TIME -> number(number.value(), style, locale);
+			case Value.Time time when format != Format.NUMBER -> date(zoned(time.value()), format, style, locale);
+			case Value.Rendered ignored when format == Format.NONE -> null;
+			default -> format == Format.NONE ? value.plain() : unsuited(value, format);
 		};
 	}
 
-	private static @Nullable String unknown(Object value, Format format) {
-		if (format == Format.NONE) return null;
-		throw new IllegalArgumentException("Cannot show " + value.getClass().getSimpleName() + " as " + format.name().toLowerCase(Locale.ROOT));
+	private static String unsuited(Value value, Format format) {
+		String kind = value.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+		throw new IllegalArgumentException("Cannot show a " + kind + " as " + format.name().toLowerCase(Locale.ROOT));
 	}
 
 	private String number(Number number, @Nullable String style, Locale locale) {
 		if (style != null && style.startsWith("::"))
 			return NumberFormatter.forSkeleton(style.substring(2).trim()).locale(locale).format(number).toString();
 
-		NumberFormat prototype = (NumberFormat) cached("number|" + locale.toLanguageTag() + "|" + style, () -> numberFormat(style, ULocale.forLocale(locale)));
+		NumberFormat prototype = cached(numbers, locale.toLanguageTag() + "|" + style, () -> numberFormat(style, ULocale.forLocale(locale)));
 		return ((NumberFormat) prototype.clone()).format(number);
 	}
 
@@ -143,7 +137,7 @@ public final class ValueFormatter {
 	private String date(ZonedDateTime time, Format format, @Nullable String style, Locale locale) {
 		if ("relative".equals(style)) return relative(time.toInstant(), locale);
 
-		DateFormat prototype = (DateFormat) cached("date|" + format + "|" + locale.toLanguageTag() + "|" + style,
+		DateFormat prototype = cached(dates, format + "|" + locale.toLanguageTag() + "|" + style,
 				() -> dateFormat(format, style, ULocale.forLocale(locale)));
 		DateFormat copy = (DateFormat) prototype.clone();
 		copy.setTimeZone(TimeZone.getTimeZone(time.getZone().getId()));
@@ -216,7 +210,7 @@ public final class ValueFormatter {
 	private record RelativeStep(long below, long seconds, RelativeDateTimeFormatter.RelativeUnit unit) {
 	}
 
-	private Object cached(String key, Supplier<Object> factory) {
+	private static <F> F cached(Map<String, F> formats, String key, Supplier<F> factory) {
 		if (formats.size() > CACHE_LIMIT) formats.clear();
 		return formats.computeIfAbsent(key, ignored -> factory.get());
 	}

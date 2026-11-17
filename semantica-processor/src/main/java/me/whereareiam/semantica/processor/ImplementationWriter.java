@@ -105,12 +105,8 @@ final class ImplementationWriter {
 		else body.append(literal(message.key() + ".")).append(" + ").append(segment(message.keyed()));
 		body.append(')');
 
-		for (VariableElement parameter : method.getParameters()) {
-			if (parameter.equals(message.keyed())) continue;
-
-			String name = parameter.getSimpleName().toString();
-			body.append("\n").append(indent).append("\t\t\t.with(").append(literal(name)).append(", ").append(name).append(')');
-		}
+		message.values().forEach((name, kind) -> body.append("\n").append(indent).append("\t\t\t.with(")
+				.append(literal(name)).append(", ").append(kind.write(name)).append(')'));
 
 		return indent + "@Override\n"
 				+ indent + "public " + MESSAGE + " " + method.getSimpleName() + "(" + parameters(method) + ") {\n"
