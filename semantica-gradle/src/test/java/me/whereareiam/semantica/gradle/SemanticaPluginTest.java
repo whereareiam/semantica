@@ -148,4 +148,28 @@ class SemanticaPluginTest {
 
 		assertTrue(result.getOutput().contains("{cost} has no parameter"), result.getOutput());
 	}
+
+	@Test
+	void readsTheParametersOfAGroupThatIsNotRecompiled() throws IOException {
+		write(MESSAGES, Files.readString(project.resolve(MESSAGES)).replace("	Message title();", "	Message title();\n\n	CartMessages cart();"));
+		write("src/main/java/com/example/shop/CartMessages.java", """
+				package com.example.shop;
+
+				import me.whereareiam.semantica.Message;
+				import me.whereareiam.semantica.declaration.Default;
+
+				public interface CartMessages {
+					@Default("{count, plural, one {# item} other {# items}}")
+					Message items(int count);
+				}
+				""");
+		gradle("compileJava").build();
+
+		write(MESSAGES, Files.readString(project.resolve(MESSAGES)).replace("<gold>Shop</gold>", "<gold>Market</gold>"));
+		BuildResult result = gradle("compileJava").build();
+
+		assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava").getOutcome());
+		assertTrue(Files.readString(project.resolve("build/classes/java/main/META-INF/semantica/en/shop.json"))
+				.contains("{count, plural, one {# item} other {# items}}"));
+	}
 }

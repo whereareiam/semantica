@@ -16,7 +16,8 @@ import java.util.List;
  *
  * <ul>
  *     <li>{@code compileJava} passes {@code semantica { locale }} to the {@code semantica-processor}, which writes the
- *     default files into {@code META-INF/semantica/<locale>/} of the classes;</li>
+ *     default files into {@code META-INF/semantica/<locale>/} of the classes, and keeps parameter names in the classes
+ *     ({@code -parameters}), which the processor reads from an interface an incremental build does not recompile;</li>
  *     <li>{@code translationsExport} copies them into {@code translations/<locale>/};</li>
  *     <li>{@code translationsCheck}, part of {@code check}, fails when the committed files differ from them.</li>
  * </ul>
@@ -37,8 +38,10 @@ public final class SemanticaPlugin implements Plugin<Project> {
 
 	private static void register(Project project, SemanticaExtension extension) {
 		TaskProvider<JavaCompile> compile = project.getTasks().named(JavaPlugin.COMPILE_JAVA_TASK_NAME, JavaCompile.class);
+		// The processor is aggregating: Gradle hands it the interfaces it does not recompile as class files, whose
+		// parameter names, the arguments of a default, only -parameters keeps.
 		compile.configure(task -> task.getOptions().getCompilerArgumentProviders()
-				.add(() -> List.of("-Asemantica.locale=" + extension.getLocale().get())));
+				.add(() -> List.of("-parameters", "-Asemantica.locale=" + extension.getLocale().get())));
 
 		Provider<Directory> generated = compile.flatMap(task -> task.getDestinationDirectory()
 				.dir(extension.getLocale().map(locale -> "META-INF/semantica/" + locale)));

@@ -37,7 +37,7 @@ semantica {
 }
 ```
 
-The plugin passes `locale` to the processor, which writes the default files into `META-INF/semantica/<locale>/` of the compiled classes. Gradle must run on Java 21.
+The plugin passes `locale` to the processor, which writes the default files into `META-INF/semantica/<locale>/` of the compiled classes, and compiles with `-parameters`, so the processor still reads the parameter names of an interface an incremental build does not recompile. Gradle must run on Java 21.
 
 ## Export and check
 
