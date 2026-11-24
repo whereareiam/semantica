@@ -15,7 +15,8 @@ import java.util.Objects;
  * ready for a format to render.
  *
  * <p>Literal parts are text the translator wrote, including a format's markup; value parts are what the
- * caller gave and are never read as markup.</p>
+ * caller gave and are never read as markup. A linked part holds the parts of a {@link Value.Linked} value's content,
+ * which a format renders on their own and makes clickable.</p>
  */
 @Getter
 @EqualsAndHashCode
@@ -60,7 +61,7 @@ public final class ResolvedMessage {
 	/**
 	 * A part of a resolved message.
 	 */
-	public sealed interface Part permits Literal, Filled {
+	public sealed interface Part permits Literal, Filled, Linked {
 		/**
 		 * Returns the part as plain text.
 		 *
@@ -105,6 +106,28 @@ public final class ResolvedMessage {
 		@Override
 		public @NotNull String text() {
 			return formatted != null ? formatted : value.plain();
+		}
+	}
+
+	/**
+	 * The parts of a value that does something when it is clicked: its content, resolved like any other part, and its
+	 * link. A format renders them on their own, so their markup ends where they end.
+	 *
+	 * @param parts the content's parts, in order
+	 * @param link  what a click does
+	 */
+	public record Linked(@NotNull List<Part> parts, Value.@NotNull Link link) implements Part {
+		public Linked {
+			parts = List.copyOf(parts);
+			Objects.requireNonNull(link, "link");
+		}
+
+		@Override
+		public @NotNull String text() {
+			StringBuilder text = new StringBuilder();
+			for (Part part : parts) text.append(part.text());
+
+			return text.toString();
 		}
 	}
 }

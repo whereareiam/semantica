@@ -11,6 +11,7 @@ import me.whereareiam.semantica.syntax.icu.IcuSyntax;
 import me.whereareiam.semantica.testing.IssueAssert;
 import me.whereareiam.semantica.testing.MemorySource;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -40,7 +41,9 @@ class AdventureRendererTest {
 					.put(RU, "greeting", "<red>Привет</red>, <bold>{name}</bold>!")
 					.put(EN, "spawn", "<click:run_command:/spawn>Go to spawn</click>")
 					.put(EN, "lore", "<gray>First line\n<gold>Second {name}")
-					.put(EN, "shadowed", "<shadow:black>Deep</shadow>")))
+					.put(EN, "shadowed", "<shadow:black>Deep</shadow>")
+					.put(EN, "page", "<gray>Page {current} {next}")
+					.put(EN, "next", "<gold>Next ({page})")))
 			.build();
 
 	static String plain(Component component) {
@@ -127,5 +130,18 @@ class AdventureRendererTest {
 
 		assertEquals("First row", plain(lines.get(0)));
 		assertEquals("Second line", plain(lines.get(1)));
+	}
+
+	@Test
+	void aLinkedValueIsItsOwnClickableComponentWithTheStyleAroundIt() {
+		Value next = Value.linked(Value.nested(Message.of("next").with("page", 2)), Value.Link.runCommand("/help 2"));
+
+		Component component = render(Message.of("page").with("current", 1).with("next", next), EN);
+
+		assertEquals("Page 1 Next (2)", plain(component));
+		Component arrow = component.children().getLast();
+		assertEquals(ClickEvent.runCommand("/help 2"), arrow.clickEvent());
+		assertEquals(NamedTextColor.GRAY, component.color());
+		assertEquals("Next (2)", plain(arrow));
 	}
 }

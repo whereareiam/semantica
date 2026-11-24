@@ -6,6 +6,10 @@ description: Declare a plugin's messages in code with @Messages, check their def
 A plugin declares its messages as methods of an interface. Each method is one message with its English default; the `semantica-processor` checks every default when the plugin compiles, writes the implementation and writes the defaults as files into the jar. No key string appears in the plugin's code, and a message without a default fails the build.
 
 ```kotlin
+plugins {
+    id("me.whereareiam.semantica") version "0.2.0"
+}
+
 dependencies {
     implementation("me.whereareiam.semantica:semantica-common:0.2.0")
     implementation("me.whereareiam.semantica:source-file:0.2.0")
@@ -13,6 +17,11 @@ dependencies {
     annotationProcessor("me.whereareiam.semantica:semantica-processor:0.2.0")
 }
 ```
+
+The processor reads the defaults' arguments by the methods' parameter names. In an incremental build it gets an
+interface that was not recompiled as a class file, which keeps parameter names only when compiled with
+`-parameters`; the [Gradle plugin](../gradle/index.md) adds it. A build without the plugin passes `-parameters` to
+the compiler itself.
 
 ## Declare them
 

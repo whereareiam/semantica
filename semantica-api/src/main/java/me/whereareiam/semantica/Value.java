@@ -5,11 +5,13 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * The value of a message's argument. Each kind is one of what a message can show: text, a number, a date or time, a
- * boolean, an enum constant, another message, or a value a format renders itself, such as an Adventure component.
+ * boolean, an enum constant, another message, several values one after another, a value that does something when it
+ * is clicked, or a value a format renders itself, such as an Adventure component.
  * <pre>{@code
  * Message.of("shop.bought")
  *         .with("item", itemName)            // Value.Text
@@ -19,7 +21,8 @@ import java.util.Objects;
  * {@link Message#with} takes the plain Java value and makes the kind; these factories make one where a value is
  * passed on, such as in a map of values.
  */
-public sealed interface Value permits Value.Text, Value.Number, Value.Time, Value.Flag, Value.Choice, Value.Nested, Value.Rendered {
+public sealed interface Value permits Value.Text, Value.Number, Value.Time, Value.Flag, Value.Choice, Value.Nested, Value.Joined,
+		Value.Linked, Value.Rendered {
 	/**
 	 * Returns a text value, shown as it is and never read as markup.
 	 *
@@ -91,8 +94,40 @@ public sealed interface Value permits Value.Text, Value.Number, Value.Time, Valu
 	}
 
 	/**
+	 * Returns several values shown one after another where the argument stands, each as it would show there alone,
+	 * such as a command's arguments, each its own message:
+	 * <pre>{@code
+	 * Value arguments = Value.joined(List.of(
+	 *         Value.text(" "), Value.nested(messages.argument("player")),
+	 *         Value.text(" "), Value.nested(messages.optionalArgument("page"))));
+	 * }</pre>
+	 *
+	 * @param values the values, in order; none shows nothing
+	 * @return the value
+	 */
+	static @NotNull Joined joined(@NotNull List<? extends Value> values) {
+		return new Joined(List.copyOf(values));
+	}
+
+	/**
+	 * Returns a value that does something when it is clicked, such as a page's arrow that runs the command of the
+	 * page. Formats that cannot click show the content alone.
+	 * <pre>{@code
+	 * Value next = Value.linked(Value.nested(messages.next(3)), Value.Link.runCommand("/arbor help 3"));
+	 * }</pre>
+	 *
+	 * @param content what is shown, such as another message
+	 * @param link    what a click does
+	 * @return the value
+	 */
+	static @NotNull Linked linked(@NotNull Value content, @NotNull Link link) {
+		return new Linked(content, link);
+	}
+
+	/**
 	 * Returns the value as plain text, as it shows where nothing formats it: a number and a time as Java writes them,
-	 * an enum constant by its name, another message by its key.
+	 * an enum constant by its name, another message by its key, joined values one after another and a linked value by
+	 * its content.
 	 *
 	 * @return the text
 	 */
@@ -104,6 +139,12 @@ public sealed interface Value permits Value.Text, Value.Number, Value.Time, Valu
 			case Flag flag -> Boolean.toString(flag.value());
 			case Choice choice -> choice.value().name();
 			case Nested nested -> nested.value().getKey();
+			case Joined joined -> {
+				StringBuilder text = new StringBuilder();
+				joined.values().forEach(value -> text.append(value.plain()));
+				yield text.toString();
+			}
+			case Linked linked -> linked.content().plain();
 			case Rendered rendered -> rendered.plain();
 		};
 	}
@@ -168,6 +209,109 @@ public sealed interface Value permits Value.Text, Value.Number, Value.Time, Valu
 	record Nested(@NotNull Message value) implements Value {
 		public Nested {
 			Objects.requireNonNull(value, "value");
+		}
+	}
+
+	/**
+	 * Several values, shown one after another.
+	 *
+	 * @param values the values, in order
+	 */
+	record Joined(@NotNull List<Value> values) implements Value {
+		public Joined {
+			values = List.copyOf(values);
+		}
+	}
+
+	/**
+	 * A value that does something when it is clicked.
+	 *
+	 * @param content what is shown
+	 * @param link    what a click does
+	 */
+	record Linked(@NotNull Value content, @NotNull Link link) implements Value {
+		public Linked {
+			Objects.requireNonNull(content, "content");
+			Objects.requireNonNull(link, "link");
+		}
+	}
+
+	/**
+	 * What clicking a {@link Linked} value does: an action and its target, such as a command or an address. The
+	 * program chooses it, never a translation, so a translator cannot make a reader run a command.
+	 *
+	 * @param action what is done
+	 * @param target the command, the address or the text, as the action needs
+	 */
+	record Link(@NotNull Action action, @NotNull String target) {
+		public Link {
+			Objects.requireNonNull(action, "action");
+			Objects.requireNonNull(target, "target");
+		}
+
+		/**
+		 * Returns a link that runs a command as the reader, such as {@code /arbor help 2}.
+		 *
+		 * @param command the command
+		 * @return the link
+		 */
+		public static @NotNull Link runCommand(@NotNull String command) {
+			return new Link(Action.RUN_COMMAND, command);
+		}
+
+		/**
+		 * Returns a link that writes a command into the reader's chat for them to complete and send.
+		 *
+		 * @param command the command
+		 * @return the link
+		 */
+		public static @NotNull Link suggestCommand(@NotNull String command) {
+			return new Link(Action.SUGGEST_COMMAND, command);
+		}
+
+		/**
+		 * Returns a link that opens an address.
+		 *
+		 * @param url the address
+		 * @return the link
+		 */
+		public static @NotNull Link openUrl(@NotNull String url) {
+			return new Link(Action.OPEN_URL, url);
+		}
+
+		/**
+		 * Returns a link that copies a text to the reader's clipboard.
+		 *
+		 * @param text the text
+		 * @return the link
+		 */
+		public static @NotNull Link copy(@NotNull String text) {
+			return new Link(Action.COPY, text);
+		}
+
+		/**
+		 * What a link does.
+		 */
+		public enum Action {
+			/**
+			 * Runs a command as the reader.
+			 */
+			RUN_COMMAND,
+
+			/**
+			 * Writes a command into the reader's chat.
+			 */
+			SUGGEST_COMMAND,
+
+			/**
+			 * Opens an address.
+			 */
+			OPEN_URL,
+
+			/**
+			 * Copies a text to the clipboard.
+			 */
+			COPY
 		}
 	}
 

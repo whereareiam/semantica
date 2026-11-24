@@ -25,6 +25,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClasspathSourceTest {
 	private static final Locale EN = Locale.ENGLISH;
@@ -90,6 +91,15 @@ class ClasspathSourceTest {
 			assertEquals("{@addon.title}", content.entries(Locale.ROOT).get("addon.prefix").text());
 			assertNull(content.entries(EN).get("shop.title"));
 		}
+	}
+
+	@Test
+	void readsAClassServedByAFileSystemOfItsOwn() throws IOException {
+		// The JDK serves its own classes from jrt:, as NeoForge serves a mod's from union:.
+		Source.Content content = ClasspathSource.of(String.class, CONFIGURA).load();
+
+		IssueAssert.assertNone(content.getIssues());
+		assertTrue(content.entries(EN).isEmpty());
 	}
 
 	private static void copyClass(ZipOutputStream zip, Class<?> type) throws IOException {

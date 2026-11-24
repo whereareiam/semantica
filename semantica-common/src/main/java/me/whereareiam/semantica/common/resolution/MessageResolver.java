@@ -187,11 +187,32 @@ public final class MessageResolver {
 				return;
 			}
 
-			if (value instanceof Value.Nested nested) {
-				nested(entry, nested.value(), depth);
-				return;
-			}
+			fill(entry, argument, value, depth);
+		}
 
+		private void fill(Catalog.Entry entry, Argument argument, Value value, int depth) {
+			switch (value) {
+				case Value.Nested nested -> nested(entry, nested.value(), depth);
+				case Value.Joined joined -> joined.values().forEach(each -> fill(entry, argument, each, depth));
+				case Value.Linked linked -> linked(entry, argument, linked, depth);
+				default -> formatted(entry, argument, value);
+			}
+		}
+
+		// The content's parts, resolved in place, then taken out and put back as one linked part.
+		private void linked(Catalog.Entry entry, Argument argument, Value.Linked linked, int depth) {
+			flush();
+			int start = parts.size();
+			fill(entry, argument, linked.content(), depth);
+			flush();
+
+			List<Part> content = parts.subList(start, parts.size());
+			ResolvedMessage.Linked part = new ResolvedMessage.Linked(content, linked.link());
+			content.clear();
+			parts.add(part);
+		}
+
+		private void formatted(Catalog.Entry entry, Argument argument, Value value) {
 			String formatted;
 			try {
 				formatted = formatter.format(value, argument.format(), argument.style(), formatLocale(entry));

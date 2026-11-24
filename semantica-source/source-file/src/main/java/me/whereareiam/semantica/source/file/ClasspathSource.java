@@ -10,8 +10,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,7 +39,8 @@ import java.util.zip.ZipFile;
  * }</pre>
  *
  * <p>The files are read from the jar or the folder of classes that holds the class given, and from nowhere else, so
- * a plugin or module whose class loader also sees another's jar reads only its own files. Their paths are key
+ * a plugin or module whose class loader also sees another's jar reads only its own files. A jar a mod loader serves
+ * through a file system of its own, such as NeoForge's {@code union:}, is read through that file system. Their paths are key
  * prefixes as in a {@link FileSource}; the folder {@value FileSource#ROOT_FOLDER} holds the root locale. The
  * texts never change while the jar runs, so the source is not watched.</p>
  */
@@ -74,42 +77,55 @@ public final class ClasspathSource implements Source {
 	@Override
 	public @NotNull Content load() throws IOException {
 		TranslationFiles files = new TranslationFiles(getName(), "", Collections.emptySet(), treeReader);
-		URI location = location();
+		String resource = owner.getName().replace('.', '/') + ".class";
+		URI location = location(resource);
 
-		if (location.getScheme().equals("jar")) loadJar(files, jarPath(location));
-		else loadFolder(files, Path.of(location).resolve(FOLDER));
+		if (location.getScheme().equals("jar")) loadJar(files, jarPath(location, resource));
+		else loadFolder(files, root(location, resource).resolve(FOLDER));
 
 		return files.build();
 	}
 
 	/**
-	 * Returns where the owner's package tree starts: the jar's root, {@code jar:file:/plugins/x.jar!/}, or a folder of
-	 * classes, {@code file:/build/classes/java/main/}.
+	 * Returns where the owner's class file was loaded from, such as {@code jar:file:/plugins/x.jar!/a/B.class},
+	 * {@code file:/build/classes/java/main/a/B.class}, or a mod loader's own file system, such as NeoForge's
+	 * {@code union:}.
 	 */
-	private URI location() throws IOException {
-		String resource = owner.getName().replace('.', '/') + ".class";
+	private URI location(String resource) throws IOException {
 		URL url = owner.getResource("/" + resource);
 		if (url == null) throw new IOException("Cannot find where " + owner.getName() + " was loaded from");
 
-		String text = url.toString();
-		String base = text.substring(0, text.length() - resource.length());
-		boolean readable = (base.startsWith("jar:file:") && base.endsWith("!/")) || base.startsWith("file:");
-		if (!readable) throw new IOException("Cannot read the texts of " + owner.getName() + " from " + base + "; it is no jar or folder");
-
 		try {
-			return new URI(base);
+			return url.toURI();
 		} catch (URISyntaxException exception) {
-			throw new IOException("Cannot read " + base, exception);
+			throw new IOException("Cannot read " + url, exception);
 		}
 	}
 
-	private static Path jarPath(URI location) throws IOException {
+	private static Path jarPath(URI location, String resource) throws IOException {
 		String inner = location.getRawSchemeSpecificPart();
+		String jar = inner.substring(0, inner.length() - ("!/" + resource).length());
 		try {
-			return Path.of(new URI(inner.substring(0, inner.length() - "!/".length())));
+			return Path.of(new URI(jar));
 		} catch (URISyntaxException exception) {
 			throw new IOException("Cannot read " + location, exception);
 		}
+	}
+
+	/**
+	 * Returns the root of the package tree on the file system that serves the class file: a folder of classes, or
+	 * the inside of a jar that a mod loader opened as a file system of its own.
+	 */
+	private Path root(URI location, String resource) throws IOException {
+		Path root;
+		try {
+			root = Path.of(location);
+		} catch (IllegalArgumentException | FileSystemNotFoundException | ProviderNotFoundException exception) {
+			throw new IOException("Cannot read the texts of " + owner.getName() + " from " + location + "; no file system serves it", exception);
+		}
+
+		for (int segment = 0; segment < resource.split("/").length; segment++) root = root.getParent();
+		return root;
 	}
 
 	private void loadJar(TranslationFiles files, Path jar) throws IOException {

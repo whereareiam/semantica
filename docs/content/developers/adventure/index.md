@@ -34,6 +34,7 @@ The project decides the locale: a player's client locale, a locale a player chos
 | text, numbers, dates, booleans, enums | text, formatted, never read as MiniMessage |
 | a `ComponentValue`, such as `ComponentValue.of(item.displayName())` | the component as it is |
 | a `Message` | its message, with its own MiniMessage |
+| a `Value.Linked` | its content as a component of its own, which runs its `Value.Link` as a click event; its tags end where it ends |
 
 `renderLines` splits the message at its line breaks, written as `\n` or as a list of strings in the file; each line is read as MiniMessage of its own, so a tag ends at the end of its line.
 

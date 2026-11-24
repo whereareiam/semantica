@@ -1,11 +1,13 @@
 package me.whereareiam.semantica.format.adventure.v4;
 
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.format.Renderer;
 import me.whereareiam.semantica.format.adventure.MarkupCheck;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
 import me.whereareiam.semantica.issue.Check;
 import me.whereareiam.semantica.message.ResolvedMessage;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -106,7 +108,8 @@ public final class AdventureRenderer implements Renderer<Component> {
 
 	/**
 	 * Renders a message as separate lines, such as an item's lore: the message is split at its line breaks, and
-	 * each line is read as MiniMessage of its own, so a tag ends at the end of its line.
+	 * each line is read as MiniMessage of its own, so a tag ends at the end of its line. A linked value stays on the
+	 * line it starts on.
 	 *
 	 * @param message the message
 	 * @return one component per line
@@ -159,11 +162,25 @@ public final class AdventureRenderer implements Renderer<Component> {
 					values.add(Placeholder.component(name, component(filled)));
 					template.append('<').append(name).append('>');
 				}
+				case ResolvedMessage.Linked linked -> {
+					String name = PLACEHOLDER + values.size();
+					values.add(Placeholder.component(name, render(linked.parts(), rendering).clickEvent(click(linked.link()))));
+					template.append('<').append(name).append('>');
+				}
 			}
 		}
 
 		values.addAll(rendering.getTags());
 		return miniMessage.deserialize(template.toString(), TagResolver.resolver(values));
+	}
+
+	private static ClickEvent click(Value.Link link) {
+		return switch (link.action()) {
+			case RUN_COMMAND -> ClickEvent.runCommand(link.target());
+			case SUGGEST_COMMAND -> ClickEvent.suggestCommand(link.target());
+			case OPEN_URL -> ClickEvent.openUrl(link.target());
+			case COPY -> ClickEvent.copyToClipboard(link.target());
+		};
 	}
 
 	private static Component component(ResolvedMessage.Filled filled) {
