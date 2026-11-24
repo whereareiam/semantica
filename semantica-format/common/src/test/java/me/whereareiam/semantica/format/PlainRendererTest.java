@@ -1,5 +1,6 @@
 package me.whereareiam.semantica.format;
 
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.message.ParsedMessage;
 import me.whereareiam.semantica.message.ResolvedMessage;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PlainRendererTest {
 	private final ResolvedMessage message = new ResolvedMessage("k", Locale.ENGLISH, List.of(
 			new ResolvedMessage.Literal("<red>Hello</red>, <hover:show_text:'hi'>"),
-			new ResolvedMessage.Value("name", "<b>Ann</b>", "<b>Ann</b>", ParsedMessage.Argument.Format.NONE, null),
+			new ResolvedMessage.Filled("name", Value.text("<b>Ann</b>"), "<b>Ann</b>", ParsedMessage.Argument.Format.NONE, null),
 			new ResolvedMessage.Literal("</hover>! 3 < 4")
 	), true);
 

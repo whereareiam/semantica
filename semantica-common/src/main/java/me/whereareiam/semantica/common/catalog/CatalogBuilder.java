@@ -43,7 +43,7 @@ public final class CatalogBuilder {
 	 */
 	private final int maxDepth;
 
-	private Map<String, Object> parsed = Map.of();
+	private Map<String, Parse> parsed = Map.of();
 
 	/**
 	 * Builds a catalog.
@@ -55,7 +55,7 @@ public final class CatalogBuilder {
 	 */
 	public synchronized @NotNull Catalog build(long revision, @NotNull List<Layered> layers, @NotNull List<Check> checks) {
 		List<Issue> issues = new ArrayList<>();
-		Map<String, Object> used = new HashMap<>();
+		Map<String, Parse> used = new HashMap<>();
 
 		Map<Locale, Map<String, Catalog.Entry>> entries = merge(layers, issues, used);
 		parsed = used;
@@ -67,7 +67,7 @@ public final class CatalogBuilder {
 		return new Catalog(revision, chain.getDefaultLocale(), entries, issues);
 	}
 
-	private Map<Locale, Map<String, Catalog.Entry>> merge(List<Layered> layers, List<Issue> issues, Map<String, Object> used) {
+	private Map<Locale, Map<String, Catalog.Entry>> merge(List<Layered> layers, List<Issue> issues, Map<String, Parse> used) {
 		Map<Locale, Map<String, List<Candidate>>> candidates = new LinkedHashMap<>();
 		for (Layered layer : layers) {
 			for (Issue issue : layer.content().getIssues())
@@ -85,15 +85,15 @@ public final class CatalogBuilder {
 			Map<String, Catalog.Entry> chosen = new LinkedHashMap<>();
 			byKey.forEach((key, list) -> {
 				for (Candidate candidate : list) {
-					Object result = parse(candidate.entry().text(), used);
-					if (result instanceof ParsedMessage message) {
+					Parse result = parse(candidate.entry().text(), used);
+					if (result instanceof Parse.Parsed(ParsedMessage message)) {
 						chosen.put(key, new Catalog.Entry(key, locale, candidate.entry().text(), message,
 								candidate.layer(), candidate.entry().origin()));
 						break;
 					}
 
-					issues.add(new Issue(Issue.Kind.SYNTAX, key, locale, candidate.layer(), candidate.entry().origin(),
-							((SyntaxException) result).getMessage()));
+					String error = ((Parse.Failed) result).error();
+					issues.add(new Issue(Issue.Kind.SYNTAX, key, locale, candidate.layer(), candidate.entry().origin(), error));
 				}
 			});
 			if (!chosen.isEmpty()) entries.put(locale, chosen);
@@ -102,19 +102,21 @@ public final class CatalogBuilder {
 		return entries;
 	}
 
-	private Object parse(String text, Map<String, Object> used) {
-		Object result = used.get(text);
+	private Parse parse(String text, Map<String, Parse> used) {
+		Parse result = used.get(text);
 		if (result == null) result = parsed.get(text);
-		if (result == null) {
-			try {
-				result = syntax.parse(text);
-			} catch (SyntaxException exception) {
-				result = exception;
-			}
-		}
+		if (result == null) result = parse(text);
 
 		used.put(text, result);
 		return result;
+	}
+
+	private Parse parse(String text) {
+		try {
+			return new Parse.Parsed(syntax.parse(text));
+		} catch (SyntaxException exception) {
+			return new Parse.Failed(exception.getMessage());
+		}
 	}
 
 	private static Issue withLayer(Issue issue, String layer) {
@@ -122,6 +124,17 @@ public final class CatalogBuilder {
 	}
 
 	private record Candidate(String layer, Source.Entry entry) {
+	}
+
+	/**
+	 * A text as the syntax read it: its message, or why it is not valid.
+	 */
+	private sealed interface Parse {
+		record Parsed(ParsedMessage message) implements Parse {
+		}
+
+		record Failed(String error) implements Parse {
+		}
 	}
 
 	/**

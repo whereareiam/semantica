@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import me.whereareiam.semantica.Content;
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.catalog.CatalogBuilder;
@@ -133,7 +134,7 @@ public final class Semantica implements AutoCloseable {
 	 * resolved and kept by its text.
 	 *
 	 * <pre>{@code
-	 * ResolvedMessage welcome = semantica.resolve(announcement, Map.of("player", name), List.of(locale));
+	 * ResolvedMessage welcome = semantica.resolve(announcement, Map.of("player", Value.text(name)), List.of(locale));
 	 * }</pre>
 	 *
 	 * @param content the content
@@ -141,7 +142,7 @@ public final class Semantica implements AutoCloseable {
 	 * @param locales the locales asked for, the most wanted first; may be empty for the default locale
 	 * @return the resolved message; when the content is not valid in the syntax, a message holding its source
 	 */
-	public @NotNull ResolvedMessage resolve(@NotNull Content content, @NotNull Map<String, ?> values, @NotNull List<Locale> locales) {
+	public @NotNull ResolvedMessage resolve(@NotNull Content content, @NotNull Map<String, ? extends Value> values, @NotNull List<Locale> locales) {
 		Objects.requireNonNull(content, "content");
 		ContentParser.Parsed parsed = contents.parse(content);
 		String source = content.getSource();
@@ -151,7 +152,7 @@ public final class Semantica implements AutoCloseable {
 			return new ResolvedMessage(source, Locale.ROOT, List.of(new ResolvedMessage.Literal(source)), false);
 		}
 
-		Map<String, Object> given = Collections.unmodifiableMap(values);
+		Map<String, Value> given = Collections.unmodifiableMap(values);
 		return resolver.resolve(catalog, source, parsed.message(), given, chain.resolve(locales), this::report);
 	}
 

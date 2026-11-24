@@ -51,7 +51,7 @@ public interface ReloadMessages {
 | `Message playerOffline(String player)` | `commands.player-offline`: method names are written in kebab case |
 | `ReloadMessages reload()` | a group: its methods are `commands.reload.*` |
 
-`@Default` holds the text in the default locale, written in the [message syntax](../../format/syntax/index.md); several strings are the lines of one message. The arguments of the text are the method's parameters by name; a value is passed through as it is, so a number still chooses a plural form and a date is formatted for the reader. A group is another interface returned by a method without parameters; its methods return messages or more groups.
+`@Default` holds the text in the default locale, written in the [message syntax](../../format/syntax/index.md); several strings are the lines of one message. The arguments of the text are the method's parameters by name, each passed on as its [kind of value](../lookup/index.md#values), so a number still chooses a plural form and a date is formatted for the reader. A parameter is text (a `String`, any `CharSequence` or a `char`), a number, a date or time, a `boolean`, an enum constant, a `Message` or a `Value`. A group is another interface returned by a method without parameters; its methods return messages or more groups.
 
 ## What the build checks
 
@@ -59,6 +59,7 @@ The processor fails the build on:
 
 - a default that is no valid message;
 - an argument that is no parameter, such as `{player}` on `cooldown(double time)`;
+- a parameter of another type, such as `Object`;
 - a `plural`, `selectordinal` or `{x, number}` over a parameter that is no number, and `{x, date}` or `{x, time}` over one that is no date;
 - a reference to a key under one of the prefixes the compilation declares that none of its methods declares, such as `{@commands.prefx}`; references to other keys, such as another plugin's, are checked when the catalog loads;
 - a method without `@Default`, two methods of one key, a method that returns neither a `Message` nor a group, a group that contains itself.

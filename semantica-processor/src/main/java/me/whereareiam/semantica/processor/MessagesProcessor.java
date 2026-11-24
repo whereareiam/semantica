@@ -117,7 +117,7 @@ public final class MessagesProcessor extends AbstractProcessor {
 	}
 
 	private void check(MessageGroup group) {
-		DefaultCheck defaults = new DefaultCheck(processingEnv, report);
+		DefaultCheck defaults = new DefaultCheck(report);
 		for (MessageGroup.Member member : group.getMethods()) {
 			switch (member) {
 				case MessageMethod message when message.keyed() != null -> openKeys.add(message.key());

@@ -27,7 +27,7 @@ The message has no values there: a content takes its values when it is resolved,
 ## Resolve it
 
 ```java
-ResolvedMessage message = semantica.resolve(welcome, Map.of("player", name), List.of(chosenLocale, clientLocale));
+ResolvedMessage message = semantica.resolve(welcome, Map.of("player", Value.text(name)), List.of(chosenLocale, clientLocale));
 Component component = renderer.render(message);
 ```
 

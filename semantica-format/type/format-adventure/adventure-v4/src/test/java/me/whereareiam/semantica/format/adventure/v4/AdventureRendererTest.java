@@ -2,6 +2,7 @@ package me.whereareiam.semantica.format.adventure.v4;
 
 import me.whereareiam.semantica.Content;
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Layer;
 import me.whereareiam.semantica.common.Semantica;
 import me.whereareiam.semantica.format.adventure.TagPolicy;
@@ -67,7 +68,7 @@ class AdventureRendererTest {
 
 	@Test
 	void insertsComponentsAsTheyAre() {
-		Component component = render(Message.of("greeting").with("name", Component.text("Ann", NamedTextColor.AQUA)), EN);
+		Component component = render(Message.of("greeting").with("name", ComponentValue.of(Component.text("Ann", NamedTextColor.AQUA))), EN);
 
 		assertEquals("Hello, Ann!", plain(component));
 		assertTrue(component.toString().contains("aqua"), component::toString);
@@ -112,7 +113,7 @@ class AdventureRendererTest {
 				.build();
 		Content content = Content.of("<gray>%player_name% on <server> said: {said}");
 
-		Component component = renderer.render(semantica.resolve(content, Map.of("said", "%player_name% <server>"), List.of(EN)), rendering);
+		Component component = renderer.render(semantica.resolve(content, Map.of("said", Value.text("%player_name% <server>")), List.of(EN)), rendering);
 
 		assertEquals("Ann on Lobby said: %player_name% <server>", plain(component));
 		assertTrue(component.toString().contains("aqua"), component::toString);

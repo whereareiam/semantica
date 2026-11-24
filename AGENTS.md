@@ -24,7 +24,7 @@ When changing behavior:
 ### Module Map
 
 - `semantica-api`
-  Contracts and models: `Message` (a key and its values), `Content` (a config's text, which may hold `{@key}` references), `declaration/` (`Messages`, `Default`, `Segment`, `KeySegment`, read by the processor), `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
+  Contracts and models: `Message` (a key and its values), `Value` (the kinds a value is of; a format adds its own `Value.Rendered`), `Content` (a config's text, which may hold `{@key}` references), `declaration/` (`Messages`, `Default`, `Segment`, `KeySegment`, read by the processor), `KeyPrefix` (whole-segment key prefixes), `catalog/Catalog` and `Layer`, `source/Source`, `locale/LocaleChain`, `message/ParsedMessage` and `ResolvedMessage`, `syntax/Syntax`, `issue/Issue` and `Check`, `exception/SyntaxException`. No Jackson, no Configura, no ICU.
 - `semantica-common`
   `Semantica` (the instance and its builder) and the engine: `catalog` (`CatalogBuilder`, `ReferenceAnalysis`), `check` (`PluralFormCheck`, `UnknownKeyCheck`, `ArgumentCheck`), `resolution` (`MessageResolver`, `ValueFormatter`, `ContentParser`, which keeps parsed contents by their text). ICU4J for CLDR plural rules and formats.
 - `semantica-syntax/syntax-icu` (project `:syntax-icu`)
@@ -38,7 +38,7 @@ When changing behavior:
 - `semantica-format/type/format-adventure/common` (project `:format-adventure-common`)
   `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`: what both Adventure adapters share, without Adventure types.
 - `semantica-format/type/format-adventure/adventure-v4` (project `:format-adventure-v4`)
-  `AdventureRenderer` (with `Rendering`, a reader's placeholders for literal parts), `AdventureTags`, `AdventureTranslator`, `TextArgument` for Adventure 4.25 (BungeeCord and Spigot through adventure-platform 4.x), `compileOnly`. Same code as v5 against 4.x: virtual components for named arguments, every MiniMessage tag.
+  `AdventureRenderer` (with `Rendering`, a reader's placeholders for literal parts), `AdventureTags`, `AdventureTranslator`, `TextArgument`, `ComponentValue` for Adventure 4.25 (BungeeCord and Spigot through adventure-platform 4.x), `compileOnly`. Same code as v5 against 4.x: virtual components for named arguments, every MiniMessage tag.
 - `semantica-format/type/format-adventure/adventure-v5` (project `:format-adventure-v5`)
   The same classes for Adventure 5.2 (Paper, Velocity, Arbor through its own NeoForge bridge), `compileOnly`. Never subclass `AbstractComponentRenderer` in either: 5.x added an abstract method to it.
 - `semantica-processor`
@@ -77,7 +77,7 @@ When changing behavior:
 
 ### API Surfaces
 
-- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `ClasspathSource`, `MessagesProcessor` and its option, `HttpSource`, `BundleLayout`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `Rendering`, `AdventureTags`, `AdventureTranslator`, `TextArgument`; `MemorySource`, `IssueAssert`).
+- `semantica-api` is the public API surface, together with the public types of the other modules that projects use (`Semantica`, `IcuSyntax`, `FileSource`, `ClasspathSource`, `MessagesProcessor` and its option, `HttpSource`, `BundleLayout`, `Manifest`, `Bundle`, `Renderer`, `PlainRenderer`, `TagPolicy`, `MarkupCheck`, `MiniMessageTags`, `MinecraftLocales`, and in both Adventure adapters `AdventureRenderer`, `Rendering`, `AdventureTags`, `AdventureTranslator`, `TextArgument`, `ComponentValue`; `MemorySource`, `IssueAssert`).
 - `CatalogBuilder`, `MessageResolver`, `ValueFormatter`, `ContentParser` and the engine's checks are public for packaging only; projects do not call them.
 - Public API changes are compatibility-sensitive. Public API code has complete Javadocs.
 
@@ -86,7 +86,7 @@ When changing behavior:
 - A format inserts values as placeholders (Adventure). Never concatenate a value into markup.
 - Caches are bounded or rebuilt with each catalog; nothing grows with the number of lookups.
 - Bundles are used only when their SHA-256 matches the manifest.
-- What crosses plugin class loaders uses only Adventure and JDK types: `TextArgument` is read through `VirtualComponent`, its simple name and `Map.Entry`, the authority through `Translator` and its name. Never `instanceof` a Semantica class on a value another plugin made.
+- What crosses plugin class loaders uses only Adventure and JDK types: `TextArgument` is read through `VirtualComponent`, its simple name and `Map.Entry`, whose value is the JDK or Adventure type the `Value` was made of (`ValueExchange` turns one into the other), the authority through `Translator` and its name. Never `instanceof` a Semantica class on a value another plugin made.
 
 ### Existing Patterns First
 

@@ -2,6 +2,7 @@ package me.whereareiam.semantica.common.resolution;
 
 import lombok.RequiredArgsConstructor;
 import me.whereareiam.semantica.Message;
+import me.whereareiam.semantica.Value;
 import me.whereareiam.semantica.catalog.Catalog;
 import me.whereareiam.semantica.issue.Issue;
 import me.whereareiam.semantica.message.ParsedMessage;
@@ -111,7 +112,7 @@ public final class MessageResolver {
 			@NotNull Catalog catalog,
 			@NotNull String source,
 			@NotNull ParsedMessage message,
-			@NotNull Map<String, Object> values,
+			@NotNull Map<String, Value> values,
 			@NotNull List<Locale> chain,
 			@NotNull Consumer<Issue> issues
 	) {
@@ -156,7 +157,7 @@ public final class MessageResolver {
 			this.issues = issues;
 		}
 
-		private void message(Catalog.Entry entry, Map<String, Object> values, int depth) {
+		private void message(Catalog.Entry entry, Map<String, Value> values, int depth) {
 			if (depth > maxDepth)
 				throw new LimitExceeded(Issue.Kind.DEPTH_LIMIT, "References and nested texts go deeper than " + maxDepth);
 
@@ -164,7 +165,7 @@ public final class MessageResolver {
 			flush();
 		}
 
-		private void nodes(Catalog.Entry entry, ParsedMessage message, Map<String, Object> values, @Nullable Count count, int depth) {
+		private void nodes(Catalog.Entry entry, ParsedMessage message, Map<String, Value> values, @Nullable Count count, int depth) {
 			for (ParsedMessage.Node node : message.getNodes()) {
 				switch (node) {
 					case Literal text -> append(text.text());
@@ -176,9 +177,9 @@ public final class MessageResolver {
 			}
 		}
 
-		private void argument(Catalog.Entry entry, Argument argument, Map<String, Object> values, @Nullable Count count, int depth) {
+		private void argument(Catalog.Entry entry, Argument argument, Map<String, Value> values, @Nullable Count count, int depth) {
 			boolean isCount = argument.name().equals(ParsedMessage.COUNT);
-			Object value = isCount ? (count != null ? count.value() : null) : values.get(argument.name());
+			Value value = isCount ? (count != null ? count.value() : null) : values.get(argument.name());
 			if (value == null) {
 				String name = isCount && count != null ? count.name() : argument.name();
 				if (!isCount) report(Issue.Kind.MISSING_VALUE, entry, "No value for '" + name + "'");
@@ -186,8 +187,8 @@ public final class MessageResolver {
 				return;
 			}
 
-			if (value instanceof Message nested) {
-				nested(entry, nested, depth);
+			if (value instanceof Value.Nested nested) {
+				nested(entry, nested.value(), depth);
 				return;
 			}
 
@@ -196,11 +197,11 @@ public final class MessageResolver {
 				formatted = formatter.format(value, argument.format(), argument.style(), formatLocale(entry));
 			} catch (RuntimeException exception) {
 				report(Issue.Kind.INVALID_VALUE, entry, "Cannot format '" + argument.name() + "': " + exception.getMessage());
-				formatted = String.valueOf(value);
+				formatted = value.plain();
 			}
 
 			flush();
-			ResolvedMessage.Value part = new ResolvedMessage.Value(argument.name(), value, formatted, argument.format(), argument.style());
+			ResolvedMessage.Filled part = new ResolvedMessage.Filled(argument.name(), value, formatted, argument.format(), argument.style());
 			grow(part.text().length());
 			parts.add(part);
 		}
@@ -218,44 +219,44 @@ public final class MessageResolver {
 			append(nested.getKey());
 		}
 
-		private void plural(Catalog.Entry entry, Plural plural, Map<String, Object> values, int depth) {
-			Object value = values.get(plural.name());
-			if (!(value instanceof Number number)) {
+		private void plural(Catalog.Entry entry, Plural plural, Map<String, Value> values, int depth) {
+			Value value = values.get(plural.name());
+			if (!(value instanceof Value.Number given)) {
 				report(value == null ? Issue.Kind.MISSING_VALUE : Issue.Kind.INVALID_VALUE, entry,
 						"The plural '" + plural.name() + "' needs a number");
 				nodes(entry, plural.branches().get("other"), values, new Count(plural.name(), value), depth);
 				return;
 			}
 
-			ParsedMessage branch = plural.branches().get("=" + exact(number));
-			Number count = minus(number, plural.offset());
+			ParsedMessage branch = plural.branches().get("=" + exact(given.value()));
+			Number count = minus(given.value(), plural.offset());
 			if (branch == null) {
 				String form = formatter.pluralForm(formatLocale(entry), count.doubleValue(), plural.ordinal());
 				branch = plural.branches().getOrDefault(form, plural.branches().get("other"));
 			}
 
-			nodes(entry, branch, values, new Count(plural.name(), count), depth);
+			nodes(entry, branch, values, new Count(plural.name(), Value.number(count)), depth);
 		}
 
-		private void select(Catalog.Entry entry, Select select, Map<String, Object> values, @Nullable Count count, int depth) {
-			Object value = values.get(select.name());
+		private void select(Catalog.Entry entry, Select select, Map<String, Value> values, @Nullable Count count, int depth) {
+			Value value = values.get(select.name());
 			if (value == null) report(Issue.Kind.MISSING_VALUE, entry, "No value for '" + select.name() + "'");
 
-			ParsedMessage branch = value == null ? null : select.branches().get(selector(value));
-			if (branch == null && value instanceof Enum<?> constant)
-				branch = select.branches().get(constant.name().toLowerCase(Locale.ROOT));
+			ParsedMessage branch = value == null ? null : select.branches().get(value.plain());
+			if (branch == null && value instanceof Value.Choice choice)
+				branch = select.branches().get(choice.value().name().toLowerCase(Locale.ROOT));
 
 			nodes(entry, branch != null ? branch : select.branches().get("other"), values, count, depth);
 		}
 
-		private void reference(Catalog.Entry entry, Reference reference, Map<String, Object> values, int depth) {
+		private void reference(Catalog.Entry entry, Reference reference, Map<String, Value> values, int depth) {
 			for (Locale locale : chain) {
 				Optional<Catalog.Entry> target = catalog.entry(locale, reference.key());
 				if (target.isEmpty()) continue;
 
-				Map<String, Object> passed = new HashMap<>(values);
+				Map<String, Value> passed = new HashMap<>(values);
 				reference.renames().forEach((name, from) -> {
-					Object value = values.get(from);
+					Value value = values.get(from);
 					if (value != null) passed.put(name, value);
 					else passed.remove(name);
 				});
@@ -307,12 +308,7 @@ public final class MessageResolver {
 	 * @param name  the plural's argument
 	 * @param value its value after the offset; the value as given when it is no number, or {@code null}
 	 */
-	private record Count(String name, @Nullable Object value) {
-	}
-
-	private static String selector(Object value) {
-		if (value instanceof Enum<?> constant) return constant.name();
-		return String.valueOf(value);
+	private record Count(String name, @Nullable Value value) {
 	}
 
 	private static String exact(Number number) {
